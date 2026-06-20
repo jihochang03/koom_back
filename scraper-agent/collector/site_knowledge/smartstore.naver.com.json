@@ -1,0 +1,10 @@
+{
+  "collection": {
+    "wait_for_selector": "h3.y67cdgB6Ve",
+    "network_patterns": [],
+    "notes": "스마트스토어 상품 상세 페이지. JS 렌더링 필요. 가격: del.v4swfx73Z2(원가), span.weP_mymkqG(할인가). 옵션: ul.vuCQVdmISZ li a[role=option]에서 data-shp-contents-type(옵션명), data-shp-contents-id(옵션값) 추출. 이미지: li.wQbS3Q5MEC img → ?type=o1000으로 변환. 판매자: span.n_SxvDlJ7T. 품절: JSON soldOut:true 패턴."
+  },
+  "domain": "smartstore.naver.com",
+  "created_at": "2026-05-29T19:57:06",
+  "updated_at": "2026-06-01T10:32:38"
+}

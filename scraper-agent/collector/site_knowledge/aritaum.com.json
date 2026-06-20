@@ -1,0 +1,11 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "requests.get으로 직접 수집 가능. 가격: #i_sSalePrice(할인가), #i_sListPrice(정가) hidden input 또는 eg:salePrice/eg:originalPrice meta. 옵션: #barOptSel select. 배송비: 텍스트에서 '배송비 2,500원 (2만원 이상 무료배송)' 패턴.",
+    "network_patterns": [],
+    "extra_clicks": []
+  },
+  "domain": "aritaum.com",
+  "created_at": "2026-06-10T11:39:52",
+  "updated_at": "2026-06-10T13:57:46"
+}

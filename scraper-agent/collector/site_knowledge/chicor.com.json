@@ -1,0 +1,9 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "simple requests로 수집 가능. 987KB 대용량 HTML. 가격: div.price.num > div.price-inner (del=원가, strong=할인가). 배송비: p.desc 내 텍스트. 대표이미지: JS 스크립트에서 cdn.chicor.com/images/goods 패턴 정규식 추출. 옵션: div.optn-change > select (goosSelect는 단품 자신 선택이므로 제외)."
+  },
+  "domain": "chicor.com",
+  "created_at": "2026-06-10T17:23:24",
+  "updated_at": "2026-06-10T17:23:24"
+}

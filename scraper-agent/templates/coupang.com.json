@@ -1,0 +1,54 @@
+{
+  "domain": "coupang.com",
+  "source_url": "https://www.coupang.com/vp/products/8510819864",
+  "created_at": "2026-05-16T00:59:45.311Z",
+  "strategy": "dom",
+  "confidence": "low",
+  "api": null,
+  "dom": {
+    "option_groups": [
+      {
+        "name": "옵션",
+        "container_selector": "[data-testid='product-options'], .prod-option, ul.prod-option__item",
+        "value_selector": "li.prod-option__item, button[data-option], a[data-vendor-item-id]",
+        "attr": "innerText"
+      }
+    ]
+  },
+  "detected_product": {
+    "title": "오뚜기 즉석국 컵밥 매콤낙지덮밥, 285g, 4개",
+    "description": "현재 별점 4.5점, 리뷰 821개를 가진 오뚜기 즉석국 컵밥 매콤낙지덮밥, 285g, 4개! 지금 쿠팡에서 더 저렴하고 다양한 즉석덮밥/비빔밥 제품들을 확인해보세요.",
+    "price": {
+      "original": null,
+      "discounted": null,
+      "currency": "KRW"
+    },
+    "options": [
+      {
+        "name": "중량",
+        "values": [
+          "285g"
+        ]
+      },
+      {
+        "name": "수량",
+        "values": [
+          "4개"
+        ]
+      }
+    ],
+    "images": [
+      "//thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2eba514c-878b-429d-87c8-ecdc089a7b156093507247902295456.png"
+    ],
+    "brand": "오뚜기",
+    "availability": "in_stock",
+    "rating": 4.5,
+    "review_count": 821,
+    "seller": null,
+    "specifications": {
+      "category": "즉석덮밥/비빔밥",
+      "product_id": "8510819864"
+    }
+  },
+  "notes": "No network requests were captured and the HTML provided contains only the page shell/meta tags — the actual product variant/option data is rendered client-side via Coupang's SDP-next React app (likely hydrated from an internal API like /vp/products/{id}/vendoritems or via __NEXT_DATA__). Extracted fields (title, rating, review count, image, brand, category) come from <meta> og tags and <title>. To capture variants reliably, intercept XHR/fetch calls to coupang.com/vp/products/{product_id} endpoints after page load, or parse the __NEXT_DATA__ script tag from the fully-rendered HTML."
+}

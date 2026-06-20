@@ -1,0 +1,31 @@
+{
+  "name": "scraper-agent",
+  "version": "1.0.0",
+  "description": "AI-powered product scraper agent — Intuned-style",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "chat": "ts-node src/index.ts chat",
+    "scrape": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
+    "browser": "ts-node src/browser-server.ts",
+    "web": "ts-node src/api-server.ts",
+    "web:build": "cd web && npm run build"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "ajv": "^8.17.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "glob": "^13.0.6",
+    "playwright": "^1.50.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

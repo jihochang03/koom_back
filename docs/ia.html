@@ -1,0 +1,219 @@
+<title>KOOM 정보구조(IA) 플로우차트</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1c2029; --line:#2a3340;
+    --ink:#e8eaf0; --mut:#9aa3b2; --dim:#6b7280;
+    --cust:#5b8cff; --cs:#f0a93b; --hq:#c98bff; --sys:#7c8694; --pub:#46c0d6;
+    --wire:#46556a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:14px;}
+  .wrap{max-width:100%;margin:0 auto;padding:0 22px 120px;}
+  header.hero{padding:44px 0 22px;border-bottom:1px solid var(--line);margin-bottom:8px;}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--cust);font-weight:700;}
+  h1{font-size:29px;margin:10px 0 8px;font-weight:800;letter-spacing:-.02em;}
+  .sub{color:var(--mut);max-width:820px;line-height:1.6;}
+  .legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:16px;font-size:12.5px;color:var(--mut);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .conv{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);}
+  nav{position:sticky;top:0;z-index:30;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);margin:16px -22px 24px;padding:10px 22px;display:flex;gap:8px;flex-wrap:wrap;}
+  nav a{color:var(--mut);text-decoration:none;font-size:13px;font-weight:600;padding:5px 12px;border-radius:8px;}
+  nav a:hover{color:var(--ink);background:var(--panel2);}
+  h2{font-size:20px;font-weight:800;margin:34px 0 6px;display:flex;align-items:center;gap:9px;}
+  h2 .pill{font-size:11px;font-weight:800;letter-spacing:.05em;padding:3px 10px;border-radius:7px;}
+  .lead{color:var(--mut);margin:0 0 12px;font-size:13px;}
+
+  .flowscroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:10px;}
+  .stage{position:relative;}
+  svg.edges{position:absolute;top:0;left:0;z-index:1;overflow:visible;pointer-events:none;}
+  .fnode{position:absolute;width:184px;min-height:58px;border-radius:11px;background:var(--panel2);
+    border:1px solid var(--line);border-top:3px solid var(--wire);padding:8px 11px;z-index:2;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:3px;}
+  .fnode.c{border-top-color:var(--cust);} .fnode.s{border-top-color:var(--cs);}
+  .fnode.h{border-top-color:var(--hq);} .fnode.p{border-top-color:var(--pub);}
+  .fnode.entry{border-top-color:var(--sys);background:#202632;}
+  .fnode.hub{background:linear-gradient(160deg,#202836,#262f3e);box-shadow:0 0 0 1px rgba(91,140,255,.25),0 4px 10px rgba(0,0,0,.3);}
+  .fnode .code{font-family:"SF Mono",Consolas,monospace;font-size:10px;font-weight:700;color:var(--wire);}
+  .fnode.c .code{color:var(--cust);} .fnode.s .code{color:var(--cs);} .fnode.h .code{color:var(--hq);} .fnode.p .code{color:var(--pub);} .fnode.entry .code{color:var(--mut);}
+  .fnode .name{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.25;}
+  .fnode .hint{font-size:10px;color:var(--mut);}
+  .conv-badge{position:absolute;top:-9px;right:-7px;background:#2a3340;border:1px solid var(--wire);
+    color:#9fbbff;font-size:9px;font-weight:800;border-radius:8px;padding:1px 6px;z-index:3;}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding-top:16px;color:var(--dim);font-size:12px;}
+  code{font-family:"SF Mono",Consolas,monospace;font-size:11.5px;color:#bcd0ff;background:var(--panel2);padding:1px 5px;border-radius:4px;}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">Information Architecture · Flowchart</div>
+  <h1>KOOM 정보구조 (IA) 플로우차트</h1>
+  <p class="sub">각 화면은 <b style="color:var(--ink)">단 하나의 노드</b>로만 존재하며, 화살표가 화면 전환을 나타냅니다. 여러 곳에서 들어오는 공통 화면(<b style="color:var(--ink)">S-04 상품상세, S-10 주문상세</b>)은 화살표가 <b style="color:var(--ink)">한 노드로 수렴</b>하고, 나가는 출구는 항상 동일합니다.</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--cust)"></i>고객</span>
+    <span><i class="sw" style="background:var(--cs)"></i>CS</span>
+    <span><i class="sw" style="background:var(--hq)"></i>본사</span>
+    <span><i class="sw" style="background:var(--pub)"></i>공개</span>
+    <span><i class="sw" style="background:var(--sys)"></i>진입/시스템</span>
+    <span class="conv"><b style="color:#9fbbff">⇲ 수렴</b> 여러 화면이 한 노드로</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#cust">고객 앱</a><a href="#cs">CS 콘솔</a><a href="#hq">본사 어드민</a>
+</nav>
+
+<section id="cust">
+  <h2><span class="pill" style="background:rgba(91,140,255,.16);color:#8fb0ff">고객 앱</span> 진입 → 탐색 → 상품 → 구매 → 주문·사후</h2>
+  <p class="lead">앱 실행 시 토큰 유무로 분기 → 로그인 → <b>홈(허브)</b>에서 갈라짐. URL입력·상품목록·쇼핑몰 3경로가 모두 <b>상품상세(S-04) 한 노드</b>로 수렴 → 담기 → 결제 → 완료 → 상세. 주문완료·주문목록은 <b>주문상세(S-10) 한 노드</b>로 수렴.</p>
+  <div class="flowscroll"><div class="stage" id="flow-cust"></div></div>
+</section>
+
+<section id="cs">
+  <h2><span class="pill" style="background:rgba(240,169,59,.16);color:#f0bd6b">CS 콘솔</span> 대리구매 → 검수 → FastBox (process 체인)</h2>
+  <p class="lead">담당 추적(허브)에서 각 작업으로 진입. 핵심은 <b>대리구매 → 검수 → FastBox 인계</b>로 이어지는 처리 순서이며, 각 단계가 주문 상태를 전이시킵니다.</p>
+  <div class="flowscroll"><div class="stage" id="flow-cs"></div></div>
+</section>
+
+<section id="hq">
+  <h2><span class="pill" style="background:rgba(201,139,255,.16);color:#d3aaff">본사 어드민</span> 모니터링 허브 → 관리 영역</h2>
+  <p class="lead">실시간 모니터링(허브)에서 상품·정산·설정·감독 영역으로 분기합니다.</p>
+  <div class="flowscroll"><div class="stage" id="flow-hq"></div></div>
+</section>
+
+<footer>
+  KOOM 정보구조(IA) 플로우차트 · 화면 1개 = 노드 1개, 화살표 = 전환 · 연결 검증표는 <code>IA_정보구조.md</code> · 화면 데이터는 <code>화면명세서.html</code>
+</footer>
+</div>
+
+<script>
+(function(){
+  var CW=232, RW=92, NW=184, NH=64, PADX=22, PADY=26;
+
+  var CUST = {
+    nodes:[
+      {id:'START', code:'START', name:'앱 실행', hint:'JWT 보유?', col:0,row:0, kind:'entry'},
+      {id:'AUTH',  code:'⎇',     name:'토큰 검증', hint:'없음→로그인 / 유효→홈', col:0,row:1, kind:'entry'},
+      {id:'S-01',  code:'S-01',  name:'LINE 로그인', hint:'OAuth→JWT', col:0,row:2, kind:'c'},
+      {id:'S-02',  code:'S-02',  name:'홈 (허브)', hint:'배너·추천·카테고리', col:1,row:1, kind:'c', hub:true},
+      {id:'S-01b', code:'S-01b', name:'URL 입력·스크래핑', hint:'url 붙여넣기', col:2,row:0, kind:'c'},
+      {id:'S-03',  code:'S-03',  name:'상품 목록', hint:'카테고리·뱃지', col:2,row:1, kind:'c'},
+      {id:'S-05',  code:'S-05',  name:'쇼핑몰 탐색', hint:'몰별 상품', col:2,row:2, kind:'c'},
+      {id:'S-09',  code:'S-09',  name:'주문 목록', hint:'내 주문', col:2,row:4, kind:'c'},
+      {id:'S-14',  code:'S-14',  name:'마이페이지', hint:'배송지·포인트·쿠폰·알림·위시', col:2,row:5, kind:'c'},
+      {id:'S-16',  code:'S-16~18', name:'FAQ·공지·정책', hint:'콘텐츠', col:2,row:6, kind:'c'},
+      {id:'S-04',  code:'S-04',  name:'상품 상세', hint:'JPY가·옵션·배송', col:3,row:1, kind:'c', conv:'3 in'},
+      {id:'S-06',  code:'S-06',  name:'장바구니(선택)', hint:'CartItem·선택', col:4,row:1, kind:'c'},
+      {id:'S-07',  code:'S-07',  name:'결제(체크아웃)', hint:'배송지·쿠폰·결제', col:5,row:1, kind:'c'},
+      {id:'S-08',  code:'S-08',  name:'주문 완료', hint:'group_number', col:6,row:1, kind:'c'},
+      {id:'S-10',  code:'S-10',  name:'주문 상세(13단계)', hint:'추적·가격·배송', col:7,row:2, kind:'c', conv:'2 in'},
+      {id:'S-1113',code:'S-11~13',name:'문의·취소·환불', hint:'CS 접수', col:8,row:1, kind:'c'},
+      {id:'P-01',  code:'P-01',  name:'세관 스냅샷(공개)', hint:'uuid·name_en', col:8,row:3, kind:'p'}
+    ],
+    edges:[
+      ['START','AUTH'],
+      ['AUTH','S-01','토큰 없음'],
+      ['AUTH','S-02','유효'],
+      ['S-01','S-02'],
+      ['S-02','S-01b'],['S-02','S-03'],['S-02','S-05'],
+      ['S-02','S-09'],['S-02','S-14'],['S-02','S-16'],
+      ['S-01b','S-04'],['S-03','S-04'],['S-05','S-04'],
+      ['S-04','S-06','담기'],
+      ['S-06','S-07','선택 결제'],['S-07','S-08'],
+      ['S-08','S-10'],['S-09','S-10'],
+      ['S-10','S-1113'],['S-10','P-01']
+    ]
+  };
+
+  var CS = {
+    nodes:[
+      {id:'CSL', code:'CS', name:'CS 로그인', hint:'cs_user', col:0,row:1, kind:'entry'},
+      {id:'C-05',code:'C-05', name:'내 담당 건 추적', hint:'scope=mine', col:1,row:1, kind:'s', hub:true},
+      {id:'C-01',code:'C-01', name:'대리구매 작업', hint:'원본URL·실제가·집하주소', col:2,row:0, kind:'s'},
+      {id:'C-02',code:'C-02', name:'상품 검수', hint:'pass/issue', col:3,row:0, kind:'s'},
+      {id:'C-03',code:'C-03', name:'FastBox 인계', hint:'송장·배송지시', col:4,row:0, kind:'s'},
+      {id:'C-04',code:'C-04', name:'CS 응대', hint:'문의·취소·환불 1차', col:2,row:2, kind:'s'},
+      {id:'H-03',code:'H-03', name:'본사 환불 실행', hint:'GMO 환불', col:3,row:2, kind:'h'}
+    ],
+    edges:[
+      ['CSL','C-05'],
+      ['C-05','C-01'],
+      ['C-01','C-02','구매완료·입고'],
+      ['C-02','C-03','검수완료'],
+      ['C-05','C-04'],
+      ['C-04','H-03','환불 승인 인계']
+    ]
+  };
+
+  var HQ = {
+    nodes:[
+      {id:'HQL', code:'HQ', name:'본사 로그인', hint:'본사 권한', col:0,row:1, kind:'entry'},
+      {id:'H-11',code:'H-11', name:'실시간 모니터링', hint:'단계·지연·오차', col:1,row:1, kind:'h', hub:true},
+      {id:'G1', code:'H-01·02', name:'상품·사이트·템플릿', hint:'뱃지·SiteTemplate', col:2,row:0, kind:'h'},
+      {id:'G2', code:'H-03·04', name:'결제·정산·스냅샷', hint:'capture·환불·name_en', col:2,row:1, kind:'h'},
+      {id:'G3', code:'H-06~09', name:'설정·쿠폰·금지·오차', hint:'요율·ErrorCriteria', col:2,row:2, kind:'h'},
+      {id:'G4', code:'H-05·10', name:'콘텐츠·주문/액션 이력', hint:'FAQ·AdminActionLog', col:2,row:3, kind:'h'}
+    ],
+    edges:[
+      ['HQL','H-11'],
+      ['H-11','G1'],['H-11','G2'],['H-11','G3'],['H-11','G4']
+    ]
+  };
+
+  function build(containerId, data){
+    var stage=document.getElementById(containerId);
+    var byId={}; var maxCol=0,maxRow=0;
+    data.nodes.forEach(function(n){ byId[n.id]=n; maxCol=Math.max(maxCol,n.col); maxRow=Math.max(maxRow,n.row); });
+    var W=PADX*2+maxCol*CW+NW, H=PADY*2+maxRow*RW+NH;
+    stage.style.width=W+'px'; stage.style.height=H+'px';
+
+    var svgNS='http://www.w3.org/2000/svg';
+    var svg=document.createElementNS(svgNS,'svg');
+    svg.setAttribute('class','edges'); svg.setAttribute('width',W); svg.setAttribute('height',H);
+    var defs=document.createElementNS(svgNS,'defs');
+    defs.innerHTML='<marker id="ah-'+containerId+'" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,6 Z" fill="#5b6b82"/></marker>';
+    svg.appendChild(defs);
+
+    function cx(n){return PADX+n.col*CW;} function cy(n){return PADY+n.row*RW;}
+    data.edges.forEach(function(e){
+      var a=byId[e[0]], b=byId[e[1]]; if(!a||!b)return;
+      var label=e[2], dashed=e[3];
+      var x1=cx(a)+NW, y1=cy(a)+NH/2, x2=cx(b), y2=cy(b)+NH/2;
+      var dx=Math.max(34,(x2-x1)*0.45);
+      var d='M'+x1+','+y1+' C'+(x1+dx)+','+y1+' '+(x2-dx)+','+y2+' '+x2+','+y2;
+      var p=document.createElementNS(svgNS,'path');
+      p.setAttribute('d',d); p.setAttribute('fill','none');
+      p.setAttribute('stroke', dashed?'#3a4658':'#5b6b82');
+      p.setAttribute('stroke-width', dashed?'1.5':'2');
+      if(dashed)p.setAttribute('stroke-dasharray','4 4');
+      p.setAttribute('marker-end','url(#ah-'+containerId+')');
+      svg.appendChild(p);
+      if(label){
+        var mx=(x1+x2)/2, my=(y1+y2)/2-4;
+        var t=document.createElementNS(svgNS,'text');
+        t.setAttribute('x',mx); t.setAttribute('y',my);
+        t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','10');
+        t.setAttribute('fill', dashed?'#7c8694':'#aab6c6');
+        t.setAttribute('style','paint-order:stroke;stroke:#0f1115;stroke-width:3px;font-weight:600;');
+        t.textContent=label; svg.appendChild(t);
+      }
+    });
+    stage.appendChild(svg);
+
+    data.nodes.forEach(function(n){
+      var el=document.createElement('div');
+      el.className='fnode '+n.kind+(n.hub?' hub':'');
+      el.style.left=cx(n)+'px'; el.style.top=cy(n)+'px';
+      var h='<div class="code">'+n.code+'</div><div class="name">'+n.name+'</div>';
+      if(n.hint)h+='<div class="hint">'+n.hint+'</div>';
+      if(n.conv)h+='<div class="conv-badge">⇲ '+n.conv+'</div>';
+      el.innerHTML=h; stage.appendChild(el);
+    });
+  }
+
+  function init(){ build('flow-cust',CUST); build('flow-cs',CS); build('flow-hq',HQ); }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>

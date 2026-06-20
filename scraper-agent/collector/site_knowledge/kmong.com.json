@@ -1,0 +1,12 @@
+{
+  "collection": {
+    "access_method": "chrome",
+    "network_patterns": [
+      "https://api.kmong.com/gig-app/gig/v1/gigs/{gig_id}/detail-modules?is_money_plus_path=false&clientType=DESKTOP"
+    ],
+    "notes": "simple 모드 차단. chrome 모드 필요. 기본 상품 정보는 api.kmong.com API로 직접 조회 가능(HEADERS에 Referer 필요). 이미지·패키지 테이블은 HTML 파싱. 패키지 섹션: #gig-package-table. 크몽은 디지털 서비스 플랫폼으로 배송비 없음."
+  },
+  "domain": "kmong.com",
+  "created_at": "2026-06-10T17:33:33",
+  "updated_at": "2026-06-10T17:33:33"
+}

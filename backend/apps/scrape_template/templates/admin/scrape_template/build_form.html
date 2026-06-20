@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}템플릿 빌드{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">홈</a>
+  &rsaquo; <a href="{% url 'admin:scrape_template_sitetemplate_changelist' %}">Site templates</a>
+  &rsaquo; 템플릿 빌드
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>템플릿 빌드</h1>
+
+<p style="color:#666;margin-bottom:1.5rem;">
+  scraper-agent가 URL을 분석해 Python 스크레이퍼 코드를 생성하고 DB에 저장합니다.<br>
+  빌드는 <strong>1~3분</strong> 소요됩니다. 완료될 때까지 페이지를 닫지 마세요.
+</p>
+
+{% if messages %}
+  {% for msg in messages %}
+    <p class="errornote">{{ msg }}</p>
+  {% endfor %}
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  <fieldset class="module aligned">
+    {% for field in form %}
+      <div class="form-row{% if field.errors %} errors{% endif %}">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}
+          <div class="help">{{ field.help_text }}</div>
+        {% endif %}
+        {% for error in field.errors %}
+          <p class="errornote">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </fieldset>
+
+  <div class="submit-row">
+    <input type="submit" value="빌드 시작" class="default">
+    <a href="{% url 'admin:scrape_template_sitetemplate_changelist' %}" style="margin-left:1rem;">취소</a>
+  </div>
+</form>
+{% endblock %}

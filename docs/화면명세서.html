@@ -1,0 +1,692 @@
+<title>KOOM 화면 명세서 (자연어 + 변수)</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1c2029; --line:#2a3340;
+    --ink:#e8eaf0; --mut:#9aa3b2; --dim:#6b7280;
+    --cust:#5b8cff; --cs:#f0a93b; --hq:#c98bff; --sys:#7c8694; --pub:#46c0d6;
+    --disp:#5b8cff; --inp:#f0a93b; --act:#5cc9a7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:14px;}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 22px 120px;}
+  header.hero{padding:46px 0 22px;border-bottom:1px solid var(--line);}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--cust);font-weight:700;}
+  h1{font-size:30px;margin:10px 0 8px;font-weight:800;letter-spacing:-.02em;}
+  .sub{color:var(--mut);max-width:820px;line-height:1.6;}
+  .howto{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .howto .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--mut);}
+  .howto .card b{color:var(--ink);}
+  .howto .pilld{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+  nav{position:sticky;top:0;z-index:20;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);margin:18px -22px 26px;padding:10px 22px;display:flex;gap:7px;flex-wrap:wrap;}
+  nav a{color:var(--mut);text-decoration:none;font-size:13px;font-weight:600;padding:5px 12px;border-radius:8px;}
+  nav a:hover{color:var(--ink);background:var(--panel2);}
+  h2{font-size:21px;font-weight:800;margin:40px 0 14px;display:flex;align-items:center;gap:9px;}
+  h2 .pill{font-size:11px;font-weight:800;letter-spacing:.05em;padding:3px 10px;border-radius:7px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;align-items:start;}
+  .screen{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden;}
+  .screen.star{border-color:rgba(92,201,167,.45);}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--panel2);border-bottom:1px solid var(--line);}
+  .dots{display:flex;gap:5px;} .dots i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .bar .id{font-family:"SF Mono",Consolas,monospace;font-size:11px;font-weight:700;}
+  .bar .nm{font-size:14px;font-weight:700;color:var(--ink);flex:1;}
+  .bar .who{font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;white-space:nowrap;}
+  .w-c{background:rgba(91,140,255,.16);color:#8fb0ff;} .w-s{background:rgba(240,169,59,.16);color:#f0bd6b;}
+  .w-h{background:rgba(201,139,255,.16);color:#d3aaff;} .w-p{background:rgba(70,192,214,.16);color:#7fd6e6;}
+  .w-y{background:rgba(124,134,148,.2);color:#aab2bf;}
+  .body{padding:6px 0 4px;}
+
+  .purpose{padding:9px 14px;color:var(--mut);font-size:12.5px;line-height:1.55;border-bottom:1px solid var(--line);background:#13171f;}
+  .purpose b{color:var(--ink);}
+
+  .sec{padding:8px 14px;border-bottom:1px solid var(--line);}
+  .sec:last-child{border-bottom:0;}
+  .sechead{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+  .sechead .d{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .sh-disp{color:var(--disp);} .sh-inp{color:var(--inp);} .sh-act{color:var(--act);}
+
+  .f{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;padding:3.5px 0;border-bottom:1px dotted #232c38;}
+  .f:last-child{border-bottom:0;}
+  .f .ko{font-size:12.5px;color:var(--ink);line-height:1.4;}
+  .f .ko .req{color:#ff8a94;font-weight:800;}
+  .f code{font-family:"SF Mono",Consolas,monospace;font-size:11px;padding:1px 6px;border-radius:5px;white-space:nowrap;}
+  .v-disp{background:rgba(91,140,255,.12);color:#9fbbff;border:1px solid rgba(91,140,255,.25);}
+  .v-inp{background:rgba(240,169,59,.12);color:#f2c477;border:1px solid rgba(240,169,59,.25);}
+  .v-act{background:rgba(92,201,167,.12);color:#86ddc1;border:1px solid rgba(92,201,167,.25);}
+
+  .act-list .f{grid-template-columns:1fr;}
+  .act-list .ko{color:var(--mut);}
+  .act-list .ko b{color:#86ddc1;font-weight:600;}
+
+  .api{font-family:"SF Mono",Consolas,monospace;font-size:10.5px;color:#9fbbff;background:#10141b;
+    padding:7px 14px;line-height:1.6;word-break:break-all;border-top:1px solid var(--line);}
+  .api .m{color:#86ddc1;font-weight:700;}
+  footer{border-top:1px solid var(--line);margin-top:46px;padding-top:16px;color:var(--dim);font-size:12px;}
+  code.inl{font-family:"SF Mono",Consolas,monospace;font-size:11.5px;color:#bcd0ff;background:var(--panel2);padding:1px 5px;border-radius:4px;}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">Screen Specification · 자연어 + 변수</div>
+  <h1>KOOM 화면 명세서</h1>
+  <p class="sub">화면마다 들어가는 데이터를 <b style="color:var(--ink)">디자이너용 자연어 설명</b>(왼쪽)과 <b style="color:var(--ink)">백엔드용 변수명</b>(오른쪽 코드칩)으로 함께 표기합니다. 각 카드는 한 화면이며 <b style="color:var(--ink)">용도 → 표시(읽기) → 입력(전송) → 동작 → API</b> 순서로 읽습니다.</p>
+  <div class="howto">
+    <div class="card"><span class="pilld" style="background:var(--disp)"></span><b>표시</b> 화면에 보여주는 데이터</div>
+    <div class="card"><span class="pilld" style="background:var(--inp)"></span><b>입력</b> 사용자가 채워 보내는 값 (<span style="color:#ff8a94">*</span> 필수)</div>
+    <div class="card"><span class="pilld" style="background:var(--act)"></span><b>동작</b> 버튼·전환·상태 변화</div>
+    <div class="card">왼쪽 <b>한글</b> = 디자이너용 · 오른쪽 <code class="inl">변수</code> = 백엔드 필드</div>
+  </div>
+</header>
+
+<nav>
+  <a href="#cust">고객 앱</a><a href="#cs">CS 콘솔</a><a href="#hq">본사 어드민</a><a href="#sys">시스템</a>
+</nav>
+
+<!-- ================= 고객 ================= -->
+<section id="cust">
+  <h2><span class="pill w-c">고객 앱</span> S · 22 화면</h2>
+  <div class="grid">
+
+    <!-- S-01 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-01</span><span class="nm">LINE 로그인</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">LINE 계정으로 로그인하는 첫 화면. 별도 회원가입 폼 없이 LINE 인증만으로 가입·로그인된다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 / 발급</div>
+          <div class="f"><span class="ko">로그인 후 발급되는 인증 토큰</span><code class="v-disp">token</code></div>
+          <div class="f"><span class="ko">고객 고유 식별자</span><code class="v-disp">customer_id</code></div>
+          <div class="f"><span class="ko">LINE 표시 이름</span><code class="v-disp">display_name</code></div>
+          <div class="f"><span class="ko">LINE 프로필 사진</span><code class="v-disp">picture_url</code></div>
+          <div class="f"><span class="ko">신규 가입 여부(온보딩 분기용)</span><code class="v-disp">is_new</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">LINE 로그인 버튼 → 동의 → <b>홈(S-02)으로 이동</b>, 동일 계정 재로그인 시 정보 갱신</span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/auth/line/login/ → callback/?code=<br><span class="m">POST</span> /api/auth/verify/</div>
+      </div>
+    </div>
+
+    <!-- S-01b -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-01b</span><span class="nm">URL 입력·즉석 스크래핑</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">고객이 한국 쇼핑몰 상품 링크를 붙여넣으면 그 자리에서 상품 정보를 긁어와 보여준다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 상품 페이지 주소(붙여넣기)</span><code class="v-inp">url</code></div>
+          <div class="f"><span class="ko">요청한 고객(자동)</span><code class="v-inp">customer_id</code></div>
+          <div class="f"><span class="ko">분류(쇼핑 고정)</span><code class="v-inp">category</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">스크래핑 진행 상태(대기·처리중·완료·실패)</span><code class="v-disp">status</code></div>
+          <div class="f"><span class="ko">긁어온 상품 정보(이름·이미지·가격)</span><code class="v-disp">raw_data</code></div>
+          <div class="f"><span class="ko">미지원 사이트 등 오류 안내</span><code class="v-disp">error_message</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">결과 카드 → <b>상품 상세(S-04)</b> / 바로 <b>장바구니 담기(S-06)</b></span></div>
+        </div>
+        <div class="api"><span class="m">POST</span> /api/scraping/analyze/<br><span class="m">GET</span> /api/scraping/requests/{id}/</div>
+      </div>
+    </div>
+
+    <!-- S-02 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-02</span><span class="nm">홈 (메인 허브)</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">로그인 후 첫 화면. 배너·추천·카테고리로 탐색을 시작하는 출발점.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">상단 이벤트 배너(기간 내 활성분)</span><code class="v-disp">EventBanner</code></div>
+          <div class="f"><span class="ko">추천 쇼핑몰·카테고리 묶음</span><code class="v-disp">FeaturedCategory</code></div>
+          <div class="f"><span class="ko">카테고리 칩 목록</span><code class="v-disp">category[]</code></div>
+          <div class="f"><span class="ko">추천 상품 목록</span><code class="v-disp">is_recommended</code></div>
+          <div class="f"><span class="ko">최근 본 URL</span><code class="v-disp">UrlVisit</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">URL 입력바→S-01b · 카테고리→S-03 · 쇼핑몰→S-05 · 하단탭→장바구니/주문/마이</span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /content/banners/ · /malls/featured-categories/ · /products/categories/ · /products/?is_recommended=true</div>
+      </div>
+    </div>
+
+    <!-- S-03 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-03</span><span class="nm">상품 목록(카탈로그)</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">카테고리·쇼핑몰·뱃지로 거른 상품 목록을 카드 그리드로 보여준다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력(필터)</div>
+          <div class="f"><span class="ko">카테고리 선택</span><code class="v-inp">category</code></div>
+          <div class="f"><span class="ko">쇼핑몰 선택</span><code class="v-inp">mall</code></div>
+          <div class="f"><span class="ko">추천만 보기</span><code class="v-inp">is_recommended</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시(상품 카드)</div>
+          <div class="f"><span class="ko">상품명</span><code class="v-disp">title</code></div>
+          <div class="f"><span class="ko">썸네일 이미지</span><code class="v-disp">images</code></div>
+          <div class="f"><span class="ko">정가 / 할인가</span><code class="v-disp">price_original/discounted</code></div>
+          <div class="f"><span class="ko">브랜드</span><code class="v-disp">brand</code></div>
+          <div class="f"><span class="ko">프리마·한정·추천 뱃지</span><code class="v-disp">is_prima/limited/recommended</code></div>
+          <div class="f"><span class="ko">상세 크롤 상태</span><code class="v-disp">detail_status</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">카드 탭 → <b>상품 상세(S-04)</b></span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/products/?category=&mall=&is_recommended=</div>
+      </div>
+    </div>
+
+    <!-- S-04 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-04</span><span class="nm">상품 상세</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">상품 1건의 이미지·옵션·최종 가격(엔화 환산+배송+관세)·배송 소요일을 보여준다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 상품</div>
+          <div class="f"><span class="ko">이미지 갤러리</span><code class="v-disp">images</code></div>
+          <div class="f"><span class="ko">상품명 / 브랜드</span><code class="v-disp">title / brand</code></div>
+          <div class="f"><span class="ko">옵션(색상·사이즈 등)</span><code class="v-disp">detail_data</code></div>
+          <div class="f"><span class="ko">재고·구매 가능 여부</span><code class="v-disp">availability</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 가격·배송</div>
+          <div class="f"><span class="ko">엔화 환산가 + 배송비 + 추정 관세·소비세</span><code class="v-disp">price(JPY)</code></div>
+          <div class="f"><span class="ko">최종 고객 부담액</span><code class="v-disp">final_amount</code></div>
+          <div class="f"><span class="ko">단계별 예상 배송 소요일</span><code class="v-disp">delivery_days</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">크롤 실패/오래됨 → <b>새로고침 크롤</b> · 담기→S-06 · 위시→S-14e · 구매→S-07</span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/products/{id}/page/ · <span class="m">POST</span> /{id}/refresh/</div>
+      </div>
+    </div>
+
+    <!-- S-05 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-05</span><span class="nm">쇼핑몰별 탐색</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">지원 쇼핑몰을 고르고, 몰별 카테고리·추천 상품을 둘러본다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">쇼핑몰 이름 / 로고</span><code class="v-disp">name / logo_url</code></div>
+          <div class="f"><span class="ko">몰 안의 카테고리명</span><code class="v-disp">category_name</code></div>
+          <div class="f"><span class="ko">카테고리별 상품 수</span><code class="v-disp">products_count</code></div>
+          <div class="f"><span class="ko">몰 추천 상품</span><code class="v-disp">recommended</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">상품 → <b>상품 상세(S-04)</b></span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/malls/ · /{slug}/ · /{slug}/products/ · /recommended/</div>
+      </div>
+    </div>
+
+    <!-- S-06 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-06</span><span class="nm">장바구니(선택)</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">담은 상품을 보고, 결제할 항목을 체크로 골라 결제로 넘긴다. 고객 1명당 장바구니 1개.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 항목</div>
+          <div class="f"><span class="ko">원본 상품 링크</span><code class="v-disp">product_url</code></div>
+          <div class="f"><span class="ko">상품명 / 브랜드</span><code class="v-disp">title / brand</code></div>
+          <div class="f"><span class="ko">선택 옵션</span><code class="v-disp">options</code></div>
+          <div class="f"><span class="ko">개당 가격 / 수량</span><code class="v-disp">price_final / quantity</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 합계</div>
+          <div class="f"><span class="ko">담긴 개수 / 총액</span><code class="v-disp">item_count / total_price</code></div>
+          <div class="f"><span class="ko">엔화 환산·포인트 적립 예상</span><code class="v-disp">JPY / points</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">수량/옵션 수정 · 삭제 · 전체 비우기 · <b>선택 항목만 결제(S-07)</b></span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/cart/{cid}/page/ · <span class="m">POST/PATCH/DELETE</span> /items/{id}/</div>
+      </div>
+    </div>
+
+    <!-- S-07 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-07</span><span class="nm">결제(체크아웃)</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">배송지·쿠폰·포인트를 고르고 카드/PayPay로 결제해 주문을 생성한다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 한 번에 조회</div>
+          <div class="f"><span class="ko">결제할 항목</span><code class="v-disp">items</code></div>
+          <div class="f"><span class="ko">배송지 목록</span><code class="v-disp">addresses</code></div>
+          <div class="f"><span class="ko">보유 포인트 / 사용가능 쿠폰</span><code class="v-disp">points / coupons</code></div>
+          <div class="f"><span class="ko">금액 요약 / 정책 안내</span><code class="v-disp">summary / policies</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 배송지 선택</span><code class="v-inp">address_id</code></div>
+          <div class="f"><span class="ko">쿠폰 / 포인트 사용액</span><code class="v-inp">coupon / point</code></div>
+          <div class="f"><span class="ko"><span class="req">*</span> 결제수단(카드·PayPay)</span><code class="v-inp">method</code></div>
+          <div class="f"><span class="ko">카드 토큰(서버 미저장)</span><code class="v-inp">token</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">결제 성공 → <b>주문 그룹 생성</b>(<code class="inl">group_number</code>) → 주문 완료(S-08)</span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /cart/{cid}/checkout/ · <span class="m">POST</span> /payment/entry/→execute/ · /orders/groups/create/</div>
+      </div>
+    </div>
+
+    <!-- S-08 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-08</span><span class="nm">주문 완료</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">결제 직후 주문번호·금액·예상 배송일을 확인하는 화면.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">주문 그룹 번호</span><code class="v-disp">group_number</code></div>
+          <div class="f"><span class="ko">결제 금액 / 통화</span><code class="v-disp">total_paid / currency</code></div>
+          <div class="f"><span class="ko">예상 배송일</span><code class="v-disp">delivery_estimate</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">주문 상세(S-10) 보기 / 계속 쇼핑(S-02)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S-09 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-09</span><span class="nm">주문 목록</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">내 주문들을 카드로 모아 보고 상세로 진입한다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">주문번호 / 그룹번호</span><code class="v-disp">order_number / group_number</code></div>
+          <div class="f"><span class="ko">진행 상태</span><code class="v-disp">status</code></div>
+          <div class="f"><span class="ko">대표 상품명 / 결제액</span><code class="v-disp">title / total_paid</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">카드 → <b>주문 상세(S-10)</b></span></div></div>
+        <div class="api"><span class="m">GET</span> /api/orders/?customer_id= · /groups/?customer_id=</div>
+      </div>
+    </div>
+
+    <!-- S-10 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-10</span><span class="nm">주문 상세(13단계 추적)</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">주문의 13단계 진행 타임라인·가격 내역·결제·배송 추적을 한 화면에서 본다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 진행 단계</div>
+          <div class="f"><span class="ko">현재 단계·이력(접수→…→배송완료)</span><code class="v-disp">OrderStatusLog.stage</code></div>
+          <div class="f"><span class="ko">단계 변경 시각 / 담당 주체</span><code class="v-disp">changed_at / responsible_party</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 가격·배송</div>
+          <div class="f"><span class="ko">예상 총액 / 실제 구매가</span><code class="v-disp">price_total / price_actual</code></div>
+          <div class="f"><span class="ko">결제 상태</span><code class="v-disp">PGTransaction.auth_status</code></div>
+          <div class="f"><span class="ko">국제 송장번호 / 지연 여부</span><code class="v-disp">fb_invoice_no / delay_type</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">문의(S-11) · 취소(S-12) · 환불(S-13) · 세관 스냅샷(P-01)</span></div></div>
+        <div class="api"><span class="m">GET</span> /orders/groups/{group_number}/ · /{order}/status-log/ · /{order}/pg/</div>
+      </div>
+    </div>
+
+    <!-- S-11 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-11</span><span class="nm">1:1 문의</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">유형을 골라 문의를 등록하고 운영자 답변을 확인한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 문의 제목 / 내용</span><code class="v-inp">title / content</code></div>
+          <div class="f"><span class="ko">문의 유형(배송·환불·검수이슈 등)</span><code class="v-inp">inquiry_type</code></div>
+          <div class="f"><span class="ko">관련 주문(선택)</span><code class="v-inp">order_number</code></div>
+          <div class="f"><span class="ko">첨부 이미지</span><code class="v-inp">images</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">처리 상태 / 운영자 답변</span><code class="v-disp">status / admin_reply</code></div>
+        </div>
+        <div class="api"><span class="m">POST</span> /api/cs/inquiries/ · <span class="m">GET</span> ?customer_id=</div>
+      </div>
+    </div>
+
+    <!-- S-12 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-12</span><span class="nm">취소 요청</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">주문 취소를 요청한다. 주문 상태에 따라 취소 가능 여부가 자동 판정된다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 대상 주문</span><code class="v-inp">order_number</code></div>
+          <div class="f"><span class="ko"><span class="req">*</span> 취소 사유</span><code class="v-inp">reason</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">처리 상태</span><code class="v-disp">status</code></div>
+          <div class="f"><span class="ko">배송비 부담 주체</span><code class="v-disp">shipping_fee_burden</code></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S-13 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-13</span><span class="nm">환불 요청</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">환불 금액을 적어 요청한다. CS가 1차 심사 후 본사가 실제 환불을 실행한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 대상 주문 / 사유</span><code class="v-inp">order_number / reason</code></div>
+          <div class="f"><span class="ko"><span class="req">*</span> 요청 금액</span><code class="v-inp">requested_amount</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">처리 상태 / 승인 금액</span><code class="v-disp">status / approved_amount</code></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S-14a -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-14a</span><span class="nm">배송지 관리</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">통관·국제배송에 필요한 수취인 정보를 관리한다. 이름은 통관용으로 3종(한자·가타카나·영문)을 받는다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 이름(한자·현지표기)</span><code class="v-inp">name</code></div>
+          <div class="f"><span class="ko">이름(가타카나) — 일본 배송 필수</span><code class="v-inp">name_kana</code></div>
+          <div class="f"><span class="ko">이름(영문) — 통관 서류용</span><code class="v-inp">name_en</code></div>
+          <div class="f"><span class="ko">생년월일 — 일본 통관 필수</span><code class="v-inp">date_of_birth</code></div>
+          <div class="f"><span class="ko"><span class="req">*</span> 전화 / 우편번호 / 주소</span><code class="v-inp">phone / zipcode / address1</code></div>
+          <div class="f"><span class="ko">기본 배송지 여부</span><code class="v-inp">is_default</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">기본 배송지 변경 시 <b>기존 기본 자동 해제</b></span></div></div>
+        <div class="api"><span class="m">GET/POST</span> /mypage/{cid}/addresses/ · <span class="m">PATCH/DELETE</span> /{addr_id}/</div>
+      </div>
+    </div>
+
+    <!-- S-14b~e -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-14b~e</span><span class="nm">포인트·쿠폰·알림·위시</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">마이페이지 하위: 포인트 잔액·쿠폰·알림 수신 설정·위시리스트.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">포인트 잔액 / 적립·사용 내역</span><code class="v-disp">balance / PointLog</code></div>
+          <div class="f"><span class="ko">보유 쿠폰·사용 여부</span><code class="v-disp">UserCoupon.is_used</code></div>
+          <div class="f"><span class="ko">위시 상품(가격 스냅샷)</span><code class="v-disp">price_snapshot</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 알림 설정</div>
+          <div class="f"><span class="ko">주문 알림(푸시/이메일)</span><code class="v-inp">order_status_push/email</code></div>
+          <div class="f"><span class="ko">마케팅 알림(푸시/이메일)</span><code class="v-inp">marketing_push/email</code></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /mypage/{cid}/points/ · /coupons/ · /notifications/ · /wishlist/{cid}/</div>
+      </div>
+    </div>
+
+    <!-- S-16~18 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-16~18</span><span class="nm">FAQ·공지·정책</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">고객지원 콘텐츠: 자주 묻는 질문, 공지사항, 약관·정책 문서.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">FAQ(분류·질문·답변)</span><code class="v-disp">FAQ.category/question/answer</code></div>
+          <div class="f"><span class="ko">공지(상단 고정 여부)</span><code class="v-disp">Notice.is_pinned</code></div>
+          <div class="f"><span class="ko">정책(버전·현행 여부)</span><code class="v-disp">Policy.version/is_current</code></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/content/faq/ · /notices/ · /policies/{type}/</div>
+      </div>
+    </div>
+
+    <!-- P-01 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--pub)">P-01</span><span class="nm">세관 스냅샷(공개)</span><span class="who w-p">공개</span></div>
+      <div class="body">
+        <div class="purpose">통관 시 세관에 제출하는 상품 정보 페이지. 로그인 없이 UUID 링크로 열린다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">상품명(국문) / 영문 품목명</span><code class="v-disp">product_name / product_name_en</code></div>
+          <div class="f"><span class="ko">수량 / 구매가</span><code class="v-disp">quantity / purchase_price</code></div>
+          <div class="f"><span class="ko">원본 링크 / 이미지</span><code class="v-disp">product_url / images</code></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/orders/snapshots/{snapshot_uuid}/ (+/html/)</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= CS ================= -->
+<section id="cs">
+  <h2><span class="pill w-s">CS 콘솔</span> C · 5 화면</h2>
+  <div class="grid">
+
+    <!-- C-01 -->
+    <div class="screen star"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cs)">C-01</span><span class="nm">대리구매 작업 ★</span><span class="who w-s">CS</span></div>
+      <div class="body">
+        <div class="purpose">결제 완료된 주문의 원본 링크를 보고 CS가 직접 구매한 뒤, 어떻게 구매했는지를 기록한다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 구매 참고(읽기)</div>
+          <div class="f"><span class="ko">원본 상품 링크(여기서 직접 구매)</span><code class="v-disp">product_url</code></div>
+          <div class="f"><span class="ko">선택 옵션 / 수량</span><code class="v-disp">options / quantity</code></div>
+          <div class="f"><span class="ko">예상 상품가</span><code class="v-disp">expected_price</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 구매 내역</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 실제 구매한 가격</span><code class="v-inp">actual_price</code></div>
+          <div class="f"><span class="ko">구매에 사용한 계정</span><code class="v-inp">purchase_account</code></div>
+          <div class="f"><span class="ko">쇼핑몰이 보낼 국내 집하 주소</span><code class="v-inp">collection_address</code></div>
+          <div class="f"><span class="ko">국내 배송비</span><code class="v-inp">domestic_shipping_fee</code></div>
+          <div class="f"><span class="ko">담당 CS / 메모</span><code class="v-inp">cs_user / memo</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작·처리</div>
+          <div class="f"><span class="ko">저장 시 구매기록 생성, 주문 <b>결제완료→구매중</b>, 실제가 vs 예상가 <b>오차 자동 판정</b></span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/cs/purchase-tasks/?state=pending · <span class="m">POST</span> /{order}/complete/</div>
+      </div>
+    </div>
+
+    <!-- C-02 -->
+    <div class="screen star"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cs)">C-02</span><span class="nm">상품 검수 ★</span><span class="who w-s">CS</span></div>
+      <div class="body">
+        <div class="purpose">국내 입고된 상품을 검수해 합격/이슈를 기록한다. 이슈면 CS 문의 티켓이 자동 생성된다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 검수 결과(합격/이슈)</span><code class="v-inp">result</code></div>
+          <div class="f"><span class="ko">구성품 일치 / 하자 여부</span><code class="v-inp">components_match / has_defect</code></div>
+          <div class="f"><span class="ko">이슈 사유</span><code class="v-inp">issue_reason</code></div>
+          <div class="f"><span class="ko">검수 사진 / 검수자</span><code class="v-inp">inspection_photos / inspector</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작·처리</div>
+          <div class="f"><span class="ko">주문 <b>→ 검수 단계</b> 전이 · <b>이슈 시 CS 문의(검수이슈) 자동 생성</b></span></div>
+        </div>
+        <div class="api"><span class="m">POST</span> /api/logistics/{order}/inspection/</div>
+      </div>
+    </div>
+
+    <!-- C-03 -->
+    <div class="screen star"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cs)">C-03</span><span class="nm">FastBox(DHUB) 인계 ★</span><span class="who w-s">CS</span></div>
+      <div class="body">
+        <div class="purpose">검수 완료 상품을 국제 물류(FastBox)에 등록해 송장을 받고, 발송을 지시한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 주문 등록</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 수취인 이름 / 이메일</span><code class="v-inp">receiver_name / receiver_email</code></div>
+          <div class="f"><span class="ko">수취인 가타카나(자동 채움)</span><code class="v-inp">receiver_name_voice</code></div>
+          <div class="f"><span class="ko">미입력 시 고객 기본 배송지로 자동 채움</span><code class="v-inp">UserAddress</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 배송지시</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 송장번호 목록(최대 200)</span><code class="v-inp">fb_invoice_nos</code></div>
+          <div class="f"><span class="ko"><span class="req">*</span> 창고 도착 예정일</span><code class="v-inp">arrival_due_date</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작·처리</div>
+          <div class="f"><span class="ko">등록 → 송장(<code class="inl">fb_invoice_no</code>)·출고 준비 · 배송지시 → 주문 <b>국제배송 단계</b> 전이</span></div>
+        </div>
+        <div class="api"><span class="m">POST</span> /logistics/{order}/dhub/register/ · <span class="m">POST</span> /logistics/dhub/instruct/</div>
+      </div>
+    </div>
+
+    <!-- C-04 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cs)">C-04</span><span class="nm">CS 응대</span><span class="who w-s">CS</span></div>
+      <div class="body">
+        <div class="purpose">고객 문의에 답하고 취소·환불을 1차 처리한다. 환불 실행은 본사가 한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko">문의 답변 / 처리 상태</span><code class="v-inp">admin_reply / status</code></div>
+          <div class="f"><span class="ko">취소 배송비 부담 주체</span><code class="v-inp">shipping_fee_burden</code></div>
+          <div class="f"><span class="ko">환불 승인 금액</span><code class="v-inp">approved_amount</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">환불 1차 승인 → <b>본사 실행(H-03)으로 인계</b></span></div>
+        </div>
+        <div class="api"><span class="m">PATCH</span> /cs/inquiries/{id}/ · /cancel/{id}/ · /refund/{id}/</div>
+      </div>
+    </div>
+
+    <!-- C-05 -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cs)">C-05</span><span class="nm">내 담당 건 추적</span><span class="who w-s">CS</span></div>
+      <div class="body">
+        <div class="purpose">내가 대리구매한 주문들의 단계·배송 지연·검수 이슈를 실시간으로 본다(본인 건만).</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 본인 담당 한정</div>
+          <div class="f"><span class="ko">단계별 주문 수</span><code class="v-disp">order_status_counts</code></div>
+          <div class="f"><span class="ko">대리구매 대기 건수</span><code class="v-disp">purchase_tasks_pending</code></div>
+          <div class="f"><span class="ko">배송 지연(24h/48h)</span><code class="v-disp">delay_24h / delay_48h</code></div>
+          <div class="f"><span class="ko">검수 이슈 / 가격 오차</span><code class="v-disp">inspection_issues / price_error</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">담당자(<code class="inl">cs_user</code>) 기준 격리 · 지연·이슈 클릭 → C-01/02/03</span></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/stats/monitoring/overview/?scope=mine&cs_user= · /logistics/stagnated/</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= 본사 ================= -->
+<section id="hq">
+  <h2><span class="pill w-h">본사 어드민</span> H · 11 화면</h2>
+  <div class="grid">
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-01</span><span class="nm">상품·뱃지 관리</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">상품 뱃지를 켜고 끄고, 카테고리·국내 입고 상태를 관리한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko">프리마·한정 뱃지</span><code class="v-inp">is_prima / is_limited</code></div>
+          <div class="f"><span class="ko">카테고리 변경</span><code class="v-inp">category</code></div>
+          <div class="f"><span class="ko">국내 운송장 / 입고 상태</span><code class="v-inp">inbound_tracking_number / arrival_status</code></div>
+        </div>
+        <div class="api"><span class="m">PATCH</span> /api/products/{id}/badges/ · /category/ · /inbound/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-02</span><span class="nm">지원사이트·AI 템플릿</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">크롤 지원 쇼핑몰을 관리하고, 신규 사이트의 크롤 템플릿을 AI로 생성한다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">지원 사이트(도메인·정렬·활성)</span><code class="v-disp">SupportedSite</code></div>
+          <div class="f"><span class="ko">생성된 템플릿 코드</span><code class="v-disp">SiteTemplate.code</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 템플릿 빌드</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 분석할 사이트 URL</span><code class="v-inp">url</code></div>
+          <div class="f"><span class="ko">분류 / 지시 메시지</span><code class="v-inp">category / message</code></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/sites/ · <span class="m">POST</span> /api/templates/build/ · /build-logs/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-03</span><span class="nm">결제·정산</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">출고 준비 후 카드 매출을 확정(Capture)하고, 취소·환불을 실행한다. CS가 승인한 환불을 GMO로 집행한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 대상 주문 그룹</span><code class="v-inp">order_group_id</code></div>
+          <div class="f"><span class="ko">환불 금액(부분 환불)</span><code class="v-inp">amount</code></div>
+          <div class="f"><span class="ko">실행 담당자</span><code class="v-inp">hq_user</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko"><b>Capture</b> 매출 확정 · <b>환불</b> 부분→일부처리/전액→취소 · 환불요청 승인-실행</span></div>
+        </div>
+        <div class="api"><span class="m">POST</span> /payment/capture/ · /refund/ · /api/cs/refund/{id}/execute/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-04</span><span class="nm">스냅샷·영문명(세관)</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">세관 제출용 상품 사본을 만들고, 통관 필수인 영문 품목명을 직접 입력한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko">영문 품목명(세관 필수)</span><code class="v-inp">product_name_en</code></div>
+          <div class="f"><span class="ko">구매가 / 수량 / 이미지</span><code class="v-inp">purchase_price / quantity / images</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div>
+          <div class="f"><span class="ko">저장 → 공개 링크(<code class="inl">snapshot_uuid</code>) 생성 → P-01</span></div>
+        </div>
+        <div class="api"><span class="m">GET/PUT</span> /api/orders/{order}/snapshot/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-05</span><span class="nm">콘텐츠 관리 🟦</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">FAQ·공지·이벤트 배너·정책 문서를 등록·정렬한다. (Django Admin 사용)</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>관리 대상</div>
+          <div class="f"><span class="ko">FAQ(정렬 순서)</span><code class="v-inp">FAQ.sort_order</code></div>
+          <div class="f"><span class="ko">공지(상단 고정)</span><code class="v-inp">Notice.is_pinned</code></div>
+          <div class="f"><span class="ko">배너(노출 기간)</span><code class="v-inp">EventBanner.starts/ends_at</code></div>
+          <div class="f"><span class="ko">정책(현행 버전)</span><code class="v-inp">Policy.is_current</code></div>
+        </div>
+        <div class="api">Django Admin · 고객 조회: <span class="m">GET</span> /api/content/*</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-06</span><span class="nm">사이트 설정 🟦</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">환율·배송 요율·배송 모드·유류할증 등 가격 계산 파라미터를 코드 배포 없이 바꾼다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>설정 항목</div>
+          <div class="f"><span class="ko">환율(엔/원)</span><code class="v-inp">ExchangeRate</code></div>
+          <div class="f"><span class="ko">배송 요율표(무게 구간)</span><code class="v-inp">ShippingRateTable</code></div>
+          <div class="f"><span class="ko">배송 모드(항공/해상 자동)</span><code class="v-inp">ShippingModeConfig</code></div>
+          <div class="f"><span class="ko">유류할증 / 카테고리 평균무게</span><code class="v-inp">FuelSurcharge / CategoryWeightPreset</code></div>
+        </div>
+        <div class="api">Django Admin · 검증: <span class="m">POST</span> /pricing/quote/ · /shipping/quote/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-07</span><span class="nm">쿠폰 생성·발급</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">쿠폰을 만들고 특정 고객에게 발급한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 쿠폰 생성</div>
+          <div class="f"><span class="ko"><span class="req">*</span> 쿠폰 코드 / 이름</span><code class="v-inp">code / name</code></div>
+          <div class="f"><span class="ko">할인 방식(정액/정률)·값</span><code class="v-inp">discount_type / discount_value</code></div>
+          <div class="f"><span class="ko">최소 주문액·유효기간·횟수</span><code class="v-inp">min_order_amount / valid_until / usage_limit</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">발급 → 고객별 쿠폰 생성(<code class="inl">UserCoupon</code>)</span></div></div>
+        <div class="api"><span class="m">POST</span> /api/mypage/coupons/ · /{id}/issue/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-08</span><span class="nm">금지 품목 키워드</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">일본 수입 금지·제한 품목 키워드를 위험 등급별로 관리한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko">키워드 / 분류</span><code class="v-inp">keyword / category</code></div>
+          <div class="f"><span class="ko">위험 등급(금지/제한/주의)</span><code class="v-inp">risk_level</code></div>
+          <div class="f"><span class="ko">세관 근거 링크 / 활성</span><code class="v-inp">customs_reference / is_active</code></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /api/prohibited/ · <span class="m">POST</span> /check/ · 관리 Django Admin</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-09</span><span class="nm">가격 오차 기준</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">실제 구매가가 예상가와 얼마나 벌어지면 회사 부담/ CS 전환할지 기준값을 설정한다.</div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력</div>
+          <div class="f"><span class="ko">소오차 기준(%·절대금액)</span><code class="v-inp">small_error_threshold_pct/abs</code></div>
+          <div class="f"><span class="ko">대오차 기준(%)</span><code class="v-inp">large_error_threshold_pct</code></div>
+          <div class="f"><span class="ko">원인별 처리 방식</span><code class="v-inp">handling_price_change</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">변경 시 <b>이력 기록</b>(<code class="inl">ErrorCriteriaLog</code>), 현행 1건만 적용</span></div></div>
+        <div class="api"><span class="m">GET/POST/PATCH</span> /api/operations/error-criteria/ · /history/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-10</span><span class="nm">주문·액션 이력(감사)</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">전체 주문 현황과 운영자의 모든 처리 이력을 감사용으로 본다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">수동 검토 대기 / 지연 건</span><code class="v-disp">manual_review / delays</code></div>
+          <div class="f"><span class="ko">상태별 주문 수</span><code class="v-disp">order_status_counts</code></div>
+          <div class="f"><span class="ko">운영자 처리 이력</span><code class="v-disp">AdminActionLog</code></div>
+        </div>
+        <div class="api"><span class="m">GET</span> /orders/admin/dashboard/ · /admin/list/ · /{order}/action-log/</div>
+      </div>
+    </div>
+
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--hq)">H-11</span><span class="nm">실시간 모니터링</span><span class="who w-h">본사</span></div>
+      <div class="body">
+        <div class="purpose">전체 주문·배송·지연·오차·검수 이슈를 한 대시보드에서 실시간 집계로 본다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시</div>
+          <div class="f"><span class="ko">단계별 주문 수 / 대리구매 대기</span><code class="v-disp">order_status_counts / purchase_tasks_pending</code></div>
+          <div class="f"><span class="ko">배송 지연 집계</span><code class="v-disp">shipping.delay_*</code></div>
+          <div class="f"><span class="ko">검수 이슈 / 가격 오차</span><code class="v-disp">inspection_issues / price_error</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">항목 클릭 → 해당 주문 드릴다운 · 보조 통계(부담액·오차율·CS전환)</span></div></div>
+        <div class="api"><span class="m">GET</span> /api/stats/monitoring/overview/ (전체)</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= 시스템 ================= -->
+<section id="sys">
+  <h2><span class="pill w-y">시스템</span> 백그라운드 · 화면 없음</h2>
+  <div class="grid">
+    <div class="screen"><div class="bar"><span class="id" style="color:var(--sys)">SYS</span><span class="nm">상품 저장·비동기 크롤</span><span class="who w-y">시스템</span></div>
+      <div class="body"><div class="purpose">크롤러가 모은 상품을 저장(같은 URL이면 갱신)하고, 상세는 큐로 하나씩 크롤한다.</div>
+        <div class="sec"><div class="f"><span class="ko">URL 기준 중복 갱신</span><code class="v-disp">upsert by url</code></div><div class="f"><span class="ko">상세 크롤 상태</span><code class="v-disp">detail_status</code></div></div>
+        <div class="api"><span class="m">POST</span> /api/products/batch/ · /{id}/detail/</div></div></div>
+    <div class="screen"><div class="bar"><span class="id" style="color:var(--sys)">SYS</span><span class="nm">알림 발송</span><span class="who w-y">시스템</span></div>
+      <div class="body"><div class="purpose">주문 단계가 바뀔 때 LINE·이메일로 자동 알림을 보내고 결과를 기록한다.</div>
+        <div class="sec"><div class="f"><span class="ko">채널·이벤트·발송 결과</span><code class="v-disp">NotificationLog</code></div></div>
+        <div class="api"><span class="m">POST</span> /api/notify/send/</div></div></div>
+    <div class="screen"><div class="bar"><span class="id" style="color:var(--sys)">SYS</span><span class="nm">가격·환율·관세</span><span class="who w-y">시스템</span></div>
+      <div class="body"><div class="purpose">엔/원 환율을 5분 캐시하고, 원가→최종가를 단계별로 계산하며, 카테고리별 관세를 조회한다.</div>
+        <div class="sec"><div class="f"><span class="ko">환율 / 가격 계산 / 관세</span><code class="v-disp">ExchangeRate / quote / tariff</code></div></div>
+        <div class="api"><span class="m">GET</span> /pricing/exchange-rate/ · <span class="m">POST</span> /pricing/quote/ · /tariff/lookup/</div></div></div>
+    <div class="screen"><div class="bar"><span class="id" style="color:var(--sys)">SYS</span><span class="nm">배송 추적·번역·파일</span><span class="who w-y">시스템</span></div>
+      <div class="body"><div class="purpose">DHUB 배송 상태를 폴링해 갱신하고, 번역을 캐시하며, 이미지·파일을 S3에 저장한다.</div>
+        <div class="sec"><div class="f"><span class="ko">배송추적 / 번역캐시 / 업로드파일</span><code class="v-disp">ShippingTracking / TranslationCache / UploadedFile</code></div></div>
+        <div class="api"><span class="m">POST</span> /logistics/{order}/tracking/sync/ · /translate/ · /storage/upload/</div></div></div>
+  </div>
+</section>
+
+<footer>
+  KOOM 화면 명세서 · 왼쪽 한글(디자이너) + 오른쪽 변수(백엔드) · 흐름은 <code class="inl">IA_정보구조.md</code> / <code class="inl">ia.html</code> · 매핑은 <code class="inl">요구사항추적표.md</code>
+</footer>
+</div>

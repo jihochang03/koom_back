@@ -1,0 +1,9 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "requests.get으로 직접 수집 가능. SSR 기반 Next.js. 가격: .priceInfo__inner-item.origin/discount > strong. 배송비: .product-info strong 중 '배송비' 포함 텍스트. 이미지: .swiper-slide.detailCard:not(.swiper-slide-duplicate) img[data-src]. 옵션: .optionName.lg"
+  },
+  "domain": "amoremall.com",
+  "created_at": "2026-06-10T17:20:15",
+  "updated_at": "2026-06-10T17:20:15"
+}

@@ -1,0 +1,80 @@
+# ===== 환경/시크릿 (절대 커밋 금지) =====
+.env
+*.env
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json
+
+# ===== Python / Django =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/backend/media/
+/backend/staticfiles/
+/backend/static_collected/
+local_settings.py
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ===== Node / scraper-agent / web =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+dist/
+build/
+.vite/
+.cache/
+coverage/
+*.tsbuildinfo
+
+# ===== 에디터/OS =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Office 임시 잠금 파일
+~$*.xlsx
+~$*.docx
+
+# ===== 기타 빌드/임시 =====
+*.tmp
+*.bak
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商品明細 / 상품 사본 — {{ snap.order_number }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Hiragino Sans", "Meiryo", sans-serif; color: #111; background: #fff; font-size: 14px; }
+  .page { max-width: 800px; margin: 0 auto; padding: 40px 32px; }
+
+  /* 헤더 */
+  .doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 24px; }
+  .doc-title { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .doc-subtitle { font-size: 13px; color: #555; margin-top: 4px; }
+  .doc-meta { text-align: right; font-size: 12px; color: #555; line-height: 1.8; }
+
+  /* 섹션 */
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; border-bottom: 1px solid #ddd; padding-bottom: 6px; margin-bottom: 12px; }
+
+  /* 파티 박스 (Shipper / Consignee) */
+  .party-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .party-box { background: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 4px; padding: 14px 16px; }
+  .party-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .party-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .party-detail { font-size: 13px; color: #444; line-height: 1.7; }
+
+  /* 상품 테이블 */
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #111; color: #fff; text-align: left; padding: 9px 12px; font-size: 12px; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: top; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .num { text-align: right; }
+  tfoot td { font-weight: 700; background: #f7f7f7; border-top: 2px solid #111; }
+
+  /* 이미지 */
+  .images { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .images img { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; }
+
+  /* 고지 */
+  .notice { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 4px; padding: 12px 14px; font-size: 12px; color: #7a5c0a; line-height: 1.7; }
+  .uuid { font-size: 11px; color: #aaa; font-family: monospace; margin-top: 4px; }
+
+  @media print {
+    body { background: #fff; }
+    .page { padding: 20px; }
+    .notice { background: #fffbe6 !important; -webkit-print-color-adjust: exact; }
+    th { background: #111 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 헤더 -->
+  <div class="doc-header">
+    <div>
+      <div class="doc-title">商品明細書 / 구매 상품 사본</div>
+      <div class="doc-subtitle">세관 제출용 · For Customs Declaration</div>
+    </div>
+    <div class="doc-meta">
+      <div>주문번호 / Order No.</div>
+      <div><strong>{{ snap.order_number }}</strong></div>
+      <div style="margin-top:4px;">생성일 / Issued</div>
+      <div>{{ snap.created_at|date:"Y-m-d" }}</div>
+    </div>
+  </div>
+
+  <!-- Shipper / Consignee -->
+  <div class="section">
+    <div class="section-title">발송인 / 수취인 · Shipper / Consignee</div>
+    <div class="party-grid">
+      <div class="party-box">
+        <div class="party-label">Shipper (발송인)</div>
+        <div class="party-name">株式会社 DK / 주식회사 DK</div>
+        <div class="party-detail">
+          인천 동구 송림로 108<br>
+          108 Songnim-ro, Dong-gu, Incheon, Korea<br>
+          Tel: 070-4710-0021
+        </div>
+      </div>
+      <div class="party-box">
+        <div class="party-label">Consignee (수취인)</div>
+        <div class="party-name">{{ snap.seller|default:"—" }}</div>
+        <div class="party-detail">
+          사이트: {{ snap.site_domain|default:"—" }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상품 명세 -->
+  <div class="section">
+    <div class="section-title">상품 명세 · Invoice List</div>
+    <table>
+      <thead>
+        <tr>
+          <th>상품명 (한국어)</th>
+          <th>Product Name (EN)</th>
+          <th class="num">수량</th>
+          <th class="num">구매가 (KRW)</th>
+          <th class="num">주문 시점 가격 (KRW)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ snap.product_name }}</td>
+          <td>{{ snap.product_name_en|default:"—" }}</td>
+          <td class="num">{{ snap.quantity }}</td>
+          <td class="num">{{ snap.purchase_price|floatformat:0 }}</td>
+          <td class="num">{{ snap.product_price_at_purchase|floatformat:0 }}</td>
+        </tr>
+      </tbody>
+      {% if snap.options %}
+      <tfoot>
+        <tr>
+          <td colspan="5">
+            옵션:
+            {% for opt in snap.options %}{{ opt.name }}: {{ opt.value }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          </td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- 이미지 -->
+  {% if snap.images %}
+  <div class="section">
+    <div class="section-title">상품 이미지 · Product Images</div>
+    <div class="images">
+      {% for img in snap.images %}
+        <img src="{{ img }}" alt="상품 이미지" loading="lazy" onerror="this.style.display='none'">
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 원본 URL -->
+  <div class="section">
+    <div class="section-title">원본 상품 URL · Original Product URL</div>
+    <div style="font-size:12px;word-break:break-all;color:#333;">
+      {% if snap.product_url %}
+        <a href="{{ snap.product_url }}" target="_blank" rel="noopener">{{ snap.product_url }}</a>
+      {% else %}
+        —
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 고지 -->
+  <div class="notice">
+    본 문서는 DK(주식회사 DK)가 구매 완료 시점에 생성한 공식 상품 사본입니다.<br>
+    원본 상품 페이지가 삭제·변경되어도 본 사본이 구매 당시 정보의 기준이 됩니다.<br>
+    This document is an official product copy issued by DK Co., Ltd. at the time of purchase.
+  </div>
+  <div class="uuid">문서 ID: {{ snap.snapshot_uuid }}</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "domain": "kmong.com",
+  "source_url": "https://kmong.com/gig/541284",
+  "created_at": "2026-05-15T15:48:01.821Z",
+  "strategy": "api",
+  "confidence": "high",
+  "api": {
+    "url_pattern": "https://api.kmong.com/gig-app/gig/v1/gigs/{product_id}/detail-modules?is_money_plus_path=false&clientType=DESKTOP",
+    "method": "GET",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "referer": "https://kmong.com/"
+    },
+    "body_template": null,
+    "id_extraction": {
+      "from": "url",
+      "pattern": "/gig/(\\d+)",
+      "group": 1
+    },
+    "response_options_path": "COMMON.packages",
+    "option_name_field": "name",
+    "option_values_field": "options"
+  },
+  "dom": null,
+  "detected_options": [],
+  "notes": "Kmong serves gig (product) data via the JSON endpoint /gig-app/gig/v1/gigs/{gigId}/detail-modules. Package/option info is typically embedded under COMMON (price, packages, options). The page rendered here is a login wall, so detected_options on screen is empty, but the API exposes full package/option data for gig 541284."
+}
