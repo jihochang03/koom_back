@@ -28,15 +28,15 @@ class ProductAdmin(admin.ModelAdmin):
         'title', 'brand', 'category',
         'arrival_status', 'inspection_required',
         'inbound_tracking_number',
-        'is_prima', 'is_limited', 'is_recommended',
+        'is_limited', 'is_recommended',
         'detail_status', 'updated_at',
     )
-    list_editable  = ('is_prima', 'is_limited', 'is_recommended', 'arrival_status', 'inspection_required')
+    list_editable  = ('is_limited', 'is_recommended', 'arrival_status', 'inspection_required')
     list_display_links = ['title']
     search_fields  = ('title', 'brand', 'url', 'product_id',
                       'inbound_order_number', 'inbound_tracking_number')
     list_filter    = ('arrival_status', 'inspection_required',
-                      'category', 'currency', 'is_prima', 'is_limited', 'is_recommended',
+                      'category', 'currency', 'is_limited', 'is_recommended',
                       'detail_status', 'mall')
     readonly_fields = ('url', 'source_url', 'product_id', 'images', 'detail_data',
                        'detail_crawled_at', 'arrived_at', 'inspected_at',
@@ -54,7 +54,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('price_original', 'price_discounted', 'currency'),
         }),
         ('뱃지', {
-            'fields': ('is_prima', 'is_limited', 'is_recommended'),
+            'fields': ('is_limited', 'is_recommended'),
         }),
         ('입고 / 도착 상태', {
             'fields': (

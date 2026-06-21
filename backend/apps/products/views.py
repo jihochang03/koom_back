@@ -113,7 +113,7 @@ class ProductCategoryUpdateView(APIView):
 
 
 class ProductBadgeUpdateView(APIView):
-    """PATCH { is_prima, is_limited } — update badge flags."""
+    """PATCH { is_limited } — update badge flags."""
     def patch(self, request, pk):
         try:
             product = Product.objects.get(pk=pk)
@@ -121,9 +121,6 @@ class ProductBadgeUpdateView(APIView):
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
         updated = []
-        if 'is_prima' in request.data:
-            product.is_prima = bool(request.data['is_prima'])
-            updated.append('is_prima')
         if 'is_limited' in request.data:
             product.is_limited = bool(request.data['is_limited'])
             updated.append('is_limited')

@@ -65,7 +65,7 @@ koom/
 ├── backend/              # Django REST API (포트 8000)
 │   ├── apps/
 │   │   ├── scraping/     # URL 분석 요청 관리
-│   │   ├── products/     # 상품 목록·카테고리·뱃지(prima/한정)·상세 크롤 상태
+│   │   ├── products/     # 상품 목록·카테고리·뱃지(한정/추천)·상세 크롤 상태
 │   │   ├── cart/         # 고객별 장바구니
 │   │   ├── pricing/      # 환율·DK 견적
 │   │   ├── shipping/     # 배송비 계산

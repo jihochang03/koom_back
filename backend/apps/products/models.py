@@ -41,7 +41,6 @@ class Product(models.Model):
     )
 
     # 뱃지
-    is_prima = models.BooleanField(default=False, db_index=True)    # 현지 판매자 확인 필요
     is_limited = models.BooleanField(default=False, db_index=True)  # 한정판
     is_recommended = models.BooleanField(default=False, db_index=True)
 

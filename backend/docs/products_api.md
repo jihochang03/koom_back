@@ -14,7 +14,7 @@ Base URL: `/api/products/`
 | POST | `/api/products/batch/` | 상품 일괄 저장 (목록 크롤 결과) |
 | GET | `/api/products/categories/` | 사용 중인 카테고리 목록 |
 | PATCH | `/api/products/{id}/category/` | 카테고리 변경 |
-| PATCH | `/api/products/{id}/badges/` | 뱃지 변경 (is_prima, is_limited) |
+| PATCH | `/api/products/{id}/badges/` | 뱃지 변경 (is_limited) |
 | POST | `/api/products/{id}/detail/` | 상세 데이터 저장 (scraper-agent → Django) |
 | POST | `/api/products/{id}/refresh/` | 재크롤 요청 (detail_status → pending) |
 | GET | `/api/products/{id}/page/` | 상품 상세 페이지 통합 데이터 |
@@ -224,7 +224,6 @@ scraper-agent가 크롤링 완료 후 상세 데이터를 밀어넣는 웹훅.
 | `review_count` | IntegerField\|null | 리뷰 수 |
 | `availability` | CharField(50) | 재고 상태 |
 | `category` | CharField(100) | 사용자 지정 카테고리 (인덱스) |
-| `is_prima` | BooleanField | 현지 판매자 확인 필요 뱃지 (인덱스) |
 | `is_limited` | BooleanField | 한정판 뱃지 (인덱스) |
 | `detail_data` | JSONField | 사전 크롤된 상세 데이터 |
 | `detail_status` | CharField(20) | 크롤 상태 (인덱스) |

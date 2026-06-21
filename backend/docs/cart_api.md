@@ -145,7 +145,7 @@ Base URL: `/api/cart/`
 |------|------|------|
 | `id` | integer | 항목 ID |
 | `product` | integer\|null | 연결된 Product ID |
-| `product_detail` | object\|null | Product 전체 정보 (is_prima, is_limited 뱃지 포함) |
+| `product_detail` | object\|null | Product 전체 정보 (is_limited 뱃지 포함) |
 | `product_url` | string | 상품 URL |
 | `title` | string | 상품 제목 |
 | `options` | array | 선택된 옵션 목록 |
@@ -176,7 +176,6 @@ Base URL: `/api/cart/`
       "product_detail": {
         "id": 42,
         "title": "무선 블루투스 이어폰",
-        "is_prima": true,
         "is_limited": false,
         ...
       },

@@ -101,7 +101,7 @@
 - **⎇ 분기**: 결과 카드 → **S-04 상품상세** · 담기 → **S-06**
 
 ### S-03 · 상품 목록(카탈로그)  `[필요: JWT, (선택) category/mall 필터]`
-- **표시(목록 카드)**: `Product` → title, images[0], price_original/price_discounted, currency, brand, 뱃지(is_prima/is_limited/is_recommended), detail_status, rating, review_count
+- **표시(목록 카드)**: `Product` → title, images[0], price_original/price_discounted, currency, brand, 뱃지(is_limited/is_recommended), detail_status, rating, review_count
 - **조회**: `GET /api/products/?category=&mall=&is_recommended=`
 - **⎇ 분기**: 카드 → **S-04** · 정렬/필터 변경 → 재조회
 
@@ -227,7 +227,7 @@ purchasing   inspection      shipping_intl    resolved/approved
 - 보조: `/api/stats/dk-burden/`, `/error-rate/`, `/cs-conversion/`, `/site-parsing/`
 
 ### H-01 · 상품·뱃지 관리
-- `PATCH /api/products/{id}/badges/` (is_prima/is_limited), `/category/`, `/inbound/`, arrival-photos
+- `PATCH /api/products/{id}/badges/` (is_limited), `/category/`, `/inbound/`, arrival-photos
 - 입고 추적: inbound_order_number, inbound_tracking_number, arrival_status(ordered→in_transit→arrived→inspected)
 
 ### H-02 · 지원사이트·AI 템플릿

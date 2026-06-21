@@ -27,7 +27,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'source_url', 'url', 'product_id',
             'title', 'price_original', 'price_discounted', 'currency',
             'images', 'brand', 'rating', 'review_count', 'availability',
-            'category', 'mall', 'is_prima', 'is_limited', 'is_recommended',
+            'category', 'mall', 'is_limited', 'is_recommended',
             'detail_data', 'detail_status', 'detail_crawled_at',
             # 입고 / 도착 상태
             'inbound_order_number', 'inbound_tracking_number', 'inbound_courier',
