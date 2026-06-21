@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KOOM 요구사항 정의서</title>
+<style>
+  :root{--bg:#0f1115;--panel:#171a21;--panel2:#1c2029;--line:#2a3340;--ink:#e8eaf0;--mut:#9aa3b2;--dim:#6b7280;
+    --acc:#5b8cff;--req:#ff5d6c;--imp:#f0a93b;--norm:#5cc9a7;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:14px;line-height:1.6;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px 120px;}
+  header.hero{padding:46px 0 24px;border-bottom:1px solid var(--line);}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);font-weight:700;}
+  h1{font-size:31px;margin:10px 0 8px;font-weight:800;letter-spacing:-.02em;}
+  .sub{color:var(--mut);max-width:760px;}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;color:var(--mut);}
+  .chip b{color:var(--ink);}
+  nav{position:sticky;top:0;z-index:20;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);margin:16px -22px 26px;padding:10px 22px;display:flex;gap:7px;flex-wrap:wrap;}
+  nav a{color:var(--mut);text-decoration:none;font-size:13px;font-weight:600;padding:5px 12px;border-radius:8px;}
+  nav a:hover{color:var(--ink);background:var(--panel2);}
+  nav a.home{color:var(--acc);}
+  h2{font-size:20px;font-weight:800;margin:38px 0 4px;}
+  .lead{color:var(--mut);margin:0 0 14px;font-size:13px;}
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:13px;margin:12px 0;}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:760px;}
+  thead th{background:var(--panel2);color:var(--ink);text-align:left;font-weight:700;font-size:12px;
+    letter-spacing:.03em;padding:11px 13px;border-bottom:1px solid var(--line);position:sticky;top:0;}
+  tbody td{padding:10px 13px;border-bottom:1px solid var(--line);color:var(--mut);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:rgba(91,140,255,.04);}
+  td.rid{font-family:"SF Mono",Consolas,monospace;color:#bcd0ff;font-weight:600;white-space:nowrap;}
+  td.nm{color:var(--ink);font-weight:600;min-width:130px;}
+  td.desc{min-width:300px;}
+  td.cond{min-width:240px;color:var(--dim);font-size:12.5px;}
+  td.flowcell{font-family:"SF Mono",Consolas,monospace;font-size:12px;color:#9fbbff;}
+  .grp td{background:rgba(124,134,148,.1);color:var(--ink);font-weight:800;font-size:12px;
+    letter-spacing:.05em;padding:8px 13px;}
+  .badge{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:6px;white-space:nowrap;}
+  .p-req{background:rgba(255,93,108,.14);color:#ff8a94;border:1px solid rgba(255,93,108,.3);}
+  .p-imp{background:rgba(240,169,59,.14);color:#f0bd6b;border:1px solid rgba(240,169,59,.3);}
+  .p-norm{background:rgba(92,201,167,.14);color:#7fdcc0;border:1px solid rgba(92,201,167,.3);}
+  .actor{font-size:11px;color:#aab6c6;background:rgba(124,134,148,.16);border-radius:5px;padding:2px 7px;white-space:nowrap;}
+  .cat{font-size:11.5px;color:#d3aaff;background:rgba(201,139,255,.12);border:1px solid rgba(201,139,255,.25);border-radius:5px;padding:2px 8px;}
+  footer{border-top:1px solid var(--line);margin-top:42px;padding-top:16px;color:var(--dim);font-size:12px;}
+  code{font-family:"SF Mono",Consolas,monospace;font-size:11.5px;color:#bcd0ff;background:var(--panel2);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">Requirements Definition · 원본</div>
+  <h1>KOOM 요구사항 정의서</h1>
+  <p class="sub">한국→일본 구매대행 서비스 KOOM의 요구사항 정의서입니다. <code>KOOM_요구사항정의서.xlsx</code>에서 그대로 생성되었습니다.</p>
+  <div class="meta">
+    <span class="chip">기능요구사항 <b>55건</b></span>
+    <span class="chip">비기능요구사항 <b>10건</b></span>
+    <span class="chip">상태 흐름 <b>6종</b></span>
+    <span class="chip">외부 API <b>10개</b></span>
+  </div>
+</header>
+<nav>
+  <a class="home" href="index.html">← 문서 홈</a>
+  <a href="#fr">기능요구사항</a>
+  <a href="#nfr">비기능요구사항</a>
+  <a href="#flow">상태 흐름</a>
+  <a href="#api">외부 API</a>
+</nav>
+
+<section id="fr">
+  <h2>1. 기능 요구사항</h2>
+  <p class="lead">모듈별 그룹. 우선순위 <span class="badge p-req">필수</span> <span class="badge p-imp">중요</span> <span class="badge p-norm">일반</span></p>
+  <div class="scroll"><table>
+    <thead><tr><th>요구사항 ID</th><th>기능명</th><th>우선순위</th><th>액터</th><th>설명</th><th>상세 조건 / 비고</th></tr></thead>
+    <tbody>
+<tr class="grp"><td colspan="7">인증</td></tr>
+<tr><td class="rid">FR-AUTH-01</td><td class="nm">LINE 소셜 로그인</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">고객은 LINE 계정으로 회원가입·로그인한다. 별도 회원가입 폼은 없다.</td><td class="cond">LINE OAuth 2.0 → code 교환 → 프로필 저장 → JWT 발급<br>동일 LINE UID 재로그인 시 SocialAccount upsert<br>저장 정보: LINE UID, displayName, pictureUrl, access_token</td></tr>
+<tr><td class="rid">FR-AUTH-02</td><td class="nm">JWT 토큰 검증</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">모든 인증 필요 API는 JWT를 검증하며 customer_id 기반으로 데이터를 격리한다.</td><td class="cond">Authorization: Bearer {token} 헤더 사용<br>토큰 만료 시 재발급 엔드포인트 제공</td></tr>
+<tr class="grp"><td colspan="7">상품</td></tr>
+<tr><td class="rid">FR-PRD-01</td><td class="nm">상품 목록 조회</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">카테고리·쇼핑몰·뱃지 기준으로 상품 목록을 필터링·정렬하여 조회한다.</td><td class="cond">필터: 카테고리, mall, is_prima, is_limited, is_recommended<br>정렬: 최신순·가격순·인기순<br>표시: 상품명, 썸네일, 원가(KRW), 예상 JPY 환산가, 뱃지, 크롤 상태</td></tr>
+<tr><td class="rid">FR-PRD-02</td><td class="nm">상품 상세 조회</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">상품 상세 정보를 조회한다. 상세 크롤 완료 시 옵션·추가 이미지를 표시한다.</td><td class="cond">detail_status=pending 이면 상세 크롤 요청 자동 트리거<br>가격은 JPY 환산가 + 배송비 + 추정 관세·소비세 포함<br>배송 소요일 단계별 표시</td></tr>
+<tr><td class="rid">FR-PRD-03</td><td class="nm">카테고리 목록 조회</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">활성화된 카테고리 목록과 카테고리별 상품 수를 조회한다.</td><td class="cond"></td></tr>
+<tr><td class="rid">FR-PRD-04</td><td class="nm">쇼핑몰(Mall) 목록 및 상품 조회</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">지원 쇼핑몰 목록을 조회하고 쇼핑몰별 상품 목록·추천 상품을 탐색한다.</td><td class="cond">GET /api/malls/ → 활성 쇼핑몰 목록<br>GET /api/malls/{slug}/products/ → 쇼핑몰 상품 목록<br>GET /api/malls/{slug}/recommended/ → 추천 상품</td></tr>
+<tr><td class="rid">FR-PRD-05</td><td class="nm">URL 기반 상품 일괄 저장</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">scraper-agent가 수집한 상품 배열을 Django에 일괄 저장한다. URL이 같으면 upsert한다.</td><td class="cond">Upsert 키: product.url (고유)<br>초기 상태: detail_status = pending</td></tr>
+<tr><td class="rid">FR-PRD-06</td><td class="nm">상품 상세 비동기 크롤</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">상품 상세 크롤은 prefetch-queue가 직렬로 처리하며(한 번에 하나) 완료 시 Django 웹훅으로 결과를 전달한다.</td><td class="cond">상태 전이: pending → prefetching → ready / failed<br>실패 시 재크롤 요청 가능</td></tr>
+<tr><td class="rid">FR-PRD-07</td><td class="nm">뱃지 관리 (prima / 한정 / 추천)</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자</span></td><td class="desc">상품별로 is_prima, is_limited, is_recommended 뱃지를 Admin에서 ON/OFF한다.</td><td class="cond">Admin 목록 화면에서 인라인 편집 지원</td></tr>
+<tr><td class="rid">FR-PRD-08</td><td class="nm">AI 템플릿 자동 생성</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자</span></td><td class="desc">신규 쇼핑몰 URL을 입력하면 Claude AI가 사이트 구조를 분석해 크롤 템플릿을 자동 생성·저장한다.</td><td class="cond">기존 템플릿 있으면 Claude 없이 즉시 실행(빠른 경로)<br>템플릿은 Django DB(SiteTemplate)에 저장<br>scraper-agent 로컬은 폴백용</td></tr>
+<tr class="grp"><td colspan="7">장바구니</td></tr>
+<tr><td class="rid">FR-CART-01</td><td class="nm">장바구니 항목 추가·수정·삭제</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">상품을 장바구니에 담고 수량·옵션을 수정하거나 항목을 삭제한다. 고객 1인당 장바구니 1개를 유지한다.</td><td class="cond">저장 항목: 상품 URL, 제목, 브랜드, 옵션(JSON), 가격, 통화, 수량<br>전체 비우기: DELETE /api/cart/{id}/</td></tr>
+<tr><td class="rid">FR-CART-02</td><td class="nm">장바구니 가격 계산</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">장바구니 조회 시 KRW→JPY 환산, 배송비, 추정 관세·소비세를 실시간으로 계산하여 합산 금액을 제공한다.</td><td class="cond">원가(KRW) → 환율 적용 → 배송비 800엔 → 관세 5% + 소비세 10%<br>포인트 적립 예상: 총 JPY / 1000 × 적립률</td></tr>
+<tr><td class="rid">FR-CART-03</td><td class="nm">결제 화면 통합 데이터 조회</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">결제 전 화면에서 배송지 목록·사용 가능 쿠폰·포인트 잔액·배송 소요일 안내를 한 번에 조회한다.</td><td class="cond">포함 데이터: 기본 배송지, 배송지 목록, 사용가능 쿠폰, 보유 포인트, 예상 배송일</td></tr>
+<tr class="grp"><td colspan="7">주문</td></tr>
+<tr><td class="rid">FR-ORD-01</td><td class="nm">주문 그룹 생성</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">장바구니 항목 전체로 주문 그룹을 생성한다. 그룹 번호는 GRP-YYYYMMDD-XXXXXX 형식으로 자동 채번된다.</td><td class="cond">OrderGroup 1개 → 복수의 Order(상품별)<br>초기 상태: OrderGroup.status = pending<br>저장 정보: 배송지, 쿠폰 적용 금액, 포인트 사용, 총 금액(JPY), 상품별 가격 내역</td></tr>
+<tr><td class="rid">FR-ORD-02</td><td class="nm">주문 상태 13단계 추적</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객·운영자</span></td><td class="desc">주문은 13개 상태를 거쳐 진행되며 각 단계 변경 시 이력을 기록하고 고객에게 알림을 발송한다.</td><td class="cond">order_received → payment_pending → paid → purchasing → purchase_complete<br>→ shipping_domestic → arrived → inspection_complete<br>→ shipping_intl → customs_clearance → shipping_jp → delivered → cancelled</td></tr>
+<tr><td class="rid">FR-ORD-03</td><td class="nm">그룹 상태 자동 동기화</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">개별 주문 상태가 변경될 때 OrderGroup의 상태를 자동으로 재계산·업데이트한다.</td><td class="cond">전체 Order = delivered → OrderGroup = completed<br>일부 Order = delivered → OrderGroup = partial<br>하나라도 cancelled → 별도 산정</td></tr>
+<tr><td class="rid">FR-ORD-04</td><td class="nm">가격 오차 감지 및 처리</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자·시스템</span></td><td class="desc">현지 구매 시 실제 가격과 예상 가격의 오차율에 따라 자동 처리 또는 CS 전환한다.</td><td class="cond">오차율 ≤ 기준치 → 회사 부담 자동 처리<br>오차율 &gt; 기준치 → CS 전환 (고객 확인)<br>기준치: Operations &gt; ErrorCriteria(is_current=True)에서 동적 설정</td></tr>
+<tr><td class="rid">FR-ORD-05</td><td class="nm">세관 제출용 상품 스냅샷</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">통관 시 Commercial Invoice에 첨부할 상품 정보를 UUID 기반 공개 링크로 생성한다.</td><td class="cond">스냅샷 항목: 상품명(KO), 상품명EN, 수량, 구매가, 원본 URL, 이미지<br>공개 링크: /public/snapshot/{uuid}/ (인증 불필요)</td></tr>
+<tr><td class="rid">FR-ORD-06</td><td class="nm">주문 목록·상세 조회</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객·운영자</span></td><td class="desc">고객은 본인 주문 목록과 상세 내역(진행 단계, 가격 내역, 배송 현황)을 조회한다.</td><td class="cond"></td></tr>
+<tr class="grp"><td colspan="7">결제</td></tr>
+<tr><td class="rid">FR-PAY-01</td><td class="nm">카드 결제 (GMO PG)</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">신용카드·직불카드로 결제한다. 카드 정보는 서버에 저장하지 않으며 GMO 토크나이저로 처리한다.</td><td class="cond">흐름: Entry(AccessID/Pass) → 프론트 토크나이즈 → Execute(결제 실행)<br>3DS 2.0 강제 적용 (일본 부정거래 방지 의무)<br>일시불 + 할부 선택 가능<br>Auth 보유기간: 최대 60일</td></tr>
+<tr><td class="rid">FR-PAY-02</td><td class="nm">PayPay QR 결제</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">PayPay QR 코드를 스캔하여 결제한다. PayPay는 결제 시점에 매출 확정 처리된다.</td><td class="cond"></td></tr>
+<tr><td class="rid">FR-PAY-03</td><td class="nm">Auth→Capture 분리 결제</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">카드 결제는 Auth(승인)→Capture(매출 확정) 2단계로 처리한다. 운영자가 출고 준비 완료 후 Capture를 실행한다.</td><td class="cond">Auth 만료(60일) 전 반드시 Capture 실행 필요<br>상품 확보·배송 전까지 매출 미확정으로 고객 분쟁 최소화</td></tr>
+<tr><td class="rid">FR-PAY-04</td><td class="nm">결제 취소·환불</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">주문 취소(Auth 취소) 또는 환불(Capture 후 환불)을 처리한다. 부분 환불을 지원한다.</td><td class="cond">취소: Capture 전 전액 취소 (거래처리료 10엔만 발생)<br>환불: 180일 이내 부분·전액 환불 가능<br>카드수수료 별도 발생 없음</td></tr>
+<tr><td class="rid">FR-PAY-05</td><td class="nm">멀티 PG 프로바이더 아키텍처</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">시스템</span></td><td class="desc">PG사를 교체·추가하더라도 뷰 코드 변경 없이 새 프로바이더 파일 등록만으로 적용 가능한 구조를 유지한다.</td><td class="cond">현재 지원: GMO 카드, GMO PayPay<br>확장 예정: Stripe, Adyen<br>BasePaymentProvider ABC 패턴 적용</td></tr>
+<tr class="grp"><td colspan="7">물류·배송</td></tr>
+<tr><td class="rid">FR-LOG-01</td><td class="nm">DHUB 주문 등록</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">출고 준비 완료 후 DHUB(FastBox) API로 주문을 등록하여 국제 운송 송장번호(FB 번호)를 채번한다.</td><td class="cond">Commercial Invoice: SHIPPER(DK) + CONSIGNEE(UserAddress) + 상품목록(ProductSnapshot)<br>결과: fb_invoice_no 저장 → ShippingTracking 생성</td></tr>
+<tr><td class="rid">FR-LOG-02</td><td class="nm">DHUB 배송지시 일괄 처리</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">창고에서 국제 발송을 시작하기 위해 DHUB 배송지시 API를 호출한다.</td><td class="cond">최대 200건 일괄 처리 가능<br>dhub_instruction_no 저장</td></tr>
+<tr><td class="rid">FR-LOG-03</td><td class="nm">배송 추적 자동 동기화</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">DHUB 배송 추적 API를 주기적으로 폴링하여 최신 배송 상태를 ShippingTracking에 반영한다.</td><td class="cond">상태 매핑: ORE → RPE → RFI → InTransit → Delivered<br>next_check_at 기반 동적 폴링 주기</td></tr>
+<tr><td class="rid">FR-LOG-04</td><td class="nm">배송 지연 자동 감지</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">24시간 이상 배송 상태 변화가 없으면 지연으로 감지하고 48시간 이상이면 심각 지연으로 분류한다.</td><td class="cond">24h: delay_detected=True, delay_type=&#x27;24h&#x27;<br>48h: delay_type=&#x27;48h&#x27;<br>지연 목록: GET /api/logistics/stagnated/?hours=24</td></tr>
+<tr><td class="rid">FR-LOG-05</td><td class="nm">검수 정보 등록</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">상품 입고 후 운영자가 검수 결과를 LogisticsInfo에 등록한다.</td><td class="cond">결과: OK / components_mismatch / defect<br>이슈 발생 시 CS Inquiry 생성 권장</td></tr>
+<tr class="grp"><td colspan="7">고객지원(CS)</td></tr>
+<tr><td class="rid">FR-CS-01</td><td class="nm">1:1 문의 등록·답변</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객·운영자</span></td><td class="desc">고객은 유형별로 문의를 등록하고 운영자는 관리자 화면에서 답변한다.</td><td class="cond">유형: general / cancel / refund / exchange / return / shipping / other<br>상태: pending → in_progress → resolved<br>다수 이미지 URL 첨부 가능</td></tr>
+<tr><td class="rid">FR-CS-02</td><td class="nm">취소 요청</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객·운영자</span></td><td class="desc">고객은 주문 취소를 요청하고 운영자는 취소 가능 여부 확인 후 처리한다.</td><td class="cond">배송비 부담 주체 설정: 고객 / 회사<br>취소 가능 여부: 주문 상태 기반 자동 검증</td></tr>
+<tr><td class="rid">FR-CS-03</td><td class="nm">환불 요청 및 부분 환불</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객·운영자</span></td><td class="desc">고객은 환불을 요청하고 운영자는 환불 금액을 심사·승인 후 GMO 환불 API로 처리한다.</td><td class="cond">부분 환불 지원<br>환불 한도: 180일 이내 (GMO 정책)<br>카드수수료 없음, 거래처리료 10엔만 발생</td></tr>
+<tr class="grp"><td colspan="7">마이페이지</td></tr>
+<tr><td class="rid">FR-MY-01</td><td class="nm">배송지 등록·수정·삭제·기본 설정</td><td><span class="badge p-req">필수</span></td><td><span class="actor">고객</span></td><td class="desc">복수의 배송지를 관리하고 기본 배송지를 지정한다. 국제배송·통관에 필요한 정보를 포함한다.</td><td class="cond">필수 항목: 성명(한자), 성명(가타카나), 성명(영문), 생년월일, 전화번호, 우편번호, 주소<br>기본 배송지 변경 시 기존 기본 배송지 자동 해제<br>name_kana: DHUB receiver_name_voice (필수)<br>name_en: Commercial Invoice CONSIGNEE (필수)<br>date_of_birth: 일본 세관 통관 필수</td></tr>
+<tr><td class="rid">FR-MY-02</td><td class="nm">포인트 조회 및 사용</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">고객</span></td><td class="desc">보유 포인트 잔액과 적립·사용 이력을 조회한다. 결제 시 포인트를 사용할 수 있다.</td><td class="cond">적립 시점: 주문 완료(delivered) 후<br>사용 단위: 1 포인트 = 1 JPY</td></tr>
+<tr><td class="rid">FR-MY-03</td><td class="nm">쿠폰 조회 및 사용</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">고객</span></td><td class="desc">보유 쿠폰 목록(사용전/사용후 필터)을 조회하고 결제 시 적용한다.</td><td class="cond">할인 유형: fixed(정액) / percent(정률)<br>쿠폰 조건: 최소 주문 금액, 최대 할인 한도, 유효기간, 사용 횟수 제한<br>발급: 운영자가 Admin에서 고객별 발급</td></tr>
+<tr><td class="rid">FR-MY-04</td><td class="nm">알림 수신 설정</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">고객</span></td><td class="desc">주문 현황 알림과 마케팅 알림을 채널별(푸시/이메일)로 수신 여부를 설정한다.</td><td class="cond">설정 항목: order_status_push, order_status_email, marketing_push, marketing_email</td></tr>
+<tr><td class="rid">FR-MY-05</td><td class="nm">위시리스트</td><td><span class="badge p-norm">일반</span></td><td><span class="actor">고객</span></td><td class="desc">관심 상품을 위시리스트에 추가하고 조회·삭제할 수 있다.</td><td class="cond">저장: 상품 URL, 가격 스냅샷, 옵션</td></tr>
+<tr class="grp"><td colspan="7">알림</td></tr>
+<tr><td class="rid">FR-NTF-01</td><td class="nm">주문 단계별 자동 알림</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">주문 상태가 변경될 때 고객의 LINE 및 이메일로 자동 알림을 발송한다.</td><td class="cond">이벤트: 주문확인, 결제완료, 구매시작, 검수완료, 한국출발, 국제배송, 일본배송, 배송완료, 취소완료, 환불완료<br>채널: LINE 푸시, 이메일<br>이력: NotificationLog에 발송 결과 기록</td></tr>
+<tr><td class="rid">FR-NTF-02</td><td class="nm">알림 수신 설정 반영</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">시스템</span></td><td class="desc">고객의 NotificationSetting에 따라 채널별 알림 발송 여부를 동적으로 결정한다.</td><td class="cond">마케팅 알림 수신 거부 고객에게는 마케팅 알림 미발송</td></tr>
+<tr class="grp"><td colspan="7">콘텐츠</td></tr>
+<tr><td class="rid">FR-CNT-01</td><td class="nm">FAQ 관리</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자·고객</span></td><td class="desc">운영자는 카테고리별 FAQ를 등록·수정·정렬하고 고객은 앱에서 FAQ를 조회한다.</td><td class="cond"></td></tr>
+<tr><td class="rid">FR-CNT-02</td><td class="nm">공지사항 관리</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자·고객</span></td><td class="desc">운영자는 공지사항을 등록하고 상단 고정(is_pinned)을 설정한다.</td><td class="cond"></td></tr>
+<tr><td class="rid">FR-CNT-03</td><td class="nm">이벤트 배너 관리</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자·고객</span></td><td class="desc">운영자는 이벤트 배너를 시작일·종료일과 함께 등록한다. 고객은 현재 시간 기준 활성 배너를 조회한다.</td><td class="cond"></td></tr>
+<tr><td class="rid">FR-CNT-04</td><td class="nm">정책 문서 관리</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자·고객</span></td><td class="desc">개인정보처리방침·이용약관·배송정책·환불정책·이용가이드를 버전별로 관리하고 현행 버전을 제공한다.</td><td class="cond">policy_type: privacy / terms / shipping / refund / guide<br>is_current=True인 레코드가 현행 정책</td></tr>
+<tr class="grp"><td colspan="7">어드민 운영</td></tr>
+<tr><td class="rid">FR-ADM-01</td><td class="nm">동적 사이트 설정 (SiteConfig)</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">환율, 배송비, 포인트 적립률, 배송 소요일 등 핵심 파라미터를 코드 배포 없이 변경한다.</td><td class="cond">설정 항목: 환율(JPY/KRW), 배송비, 관세율, 소비세율, 포인트 적립률, 단계별 배송 소요일<br>변경 시 캐시(5분) 자동 갱신</td></tr>
+<tr><td class="rid">FR-ADM-02</td><td class="nm">가격 오차 기준 설정</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자</span></td><td class="desc">ErrorCriteria에서 오차 자동 처리 기준값과 CS 전환 기준값을 설정한다.</td><td class="cond">변경 이력: ErrorCriteriaLog에 기록<br>is_current=True인 레코드가 현행 기준</td></tr>
+<tr><td class="rid">FR-ADM-03</td><td class="nm">상품 영문명 직접 편집</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">ProductSnapshot 목록 화면에서 product_name_en(영문 품목명)을 인라인으로 직접 편집한다.</td><td class="cond">용도: Commercial Invoice 기재 (세관 필수)<br>Admin list_editable 적용</td></tr>
+<tr><td class="rid">FR-ADM-04</td><td class="nm">금지 품목 키워드 관리</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">일본 수입 금지·제한 품목 키워드를 리스크 등급별로 관리하고 활성화/비활성화한다.</td><td class="cond">리스크 등급: high / mid / low<br>참조: 일본 세관청 수입 금지·제한 품목 목록</td></tr>
+<tr><td class="rid">FR-ADM-05</td><td class="nm">지원 사이트 관리</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">지원 쇼핑몰(SupportedSite) 목록을 관리하고 정렬 순서와 활성화 여부를 설정한다.</td><td class="cond"></td></tr>
+<tr><td class="rid">FR-ADM-06</td><td class="nm">쿠폰 생성 및 발급</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자</span></td><td class="desc">쿠폰을 생성하고 특정 고객에게 발급한다.</td><td class="cond">설정: 할인 유형·금액·유효기간·사용 횟수<br>발급: 고객별 UserCoupon 생성</td></tr>
+<tr><td class="rid">FR-ADM-07</td><td class="nm">Capture 실행 (매출 확정)</td><td><span class="badge p-req">필수</span></td><td><span class="actor">운영자</span></td><td class="desc">상품 출고 준비 완료 시점에 GMO Capture API를 호출하여 카드 매출을 확정한다.</td><td class="cond">Auth 만료(60일) 전 반드시 실행<br>POST /api/payment/capture/</td></tr>
+<tr><td class="rid">FR-ADM-08</td><td class="nm">어드민 액션 이력 기록</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">시스템</span></td><td class="desc">주문에 대한 운영자의 모든 처리 내역을 AdminActionLog에 기록한다.</td><td class="cond">기록 항목: 상태 변경, DK 부담액, 검수 이슈 등록, 환불 승인 등</td></tr>
+<tr class="grp"><td colspan="7">가격·환율</td></tr>
+<tr><td class="rid">FR-PRC-01</td><td class="nm">실시간 환율 조회 및 캐싱</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">JPY/KRW 환율을 외부 API로 실시간 조회하고 5분간 캐싱하여 과도한 외부 호출을 방지한다.</td><td class="cond">캐시 키: ExchangeRateLog<br>TTL: 5분</td></tr>
+<tr><td class="rid">FR-PRC-02</td><td class="nm">가격 계산 파이프라인</td><td><span class="badge p-req">필수</span></td><td><span class="actor">시스템</span></td><td class="desc">상품 원가(KRW)를 기반으로 표시 가격과 주문 가격을 단계적으로 계산한다.</td><td class="cond">① 원가(KRW) × 환율 = 기준 JPY<br>② + 국내 배송비(KRW→JPY)<br>③ + 국제 배송비<br>④ × 관세율(CIF 기준 5%)<br>⑤ × 소비세(10%)<br>= 최종 고객 부담액</td></tr>
+<tr><td class="rid">FR-PRC-03</td><td class="nm">배송비 요율표 관리</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">운영자</span></td><td class="desc">배송사별·무게 구간별 배송비 요율표를 Admin에서 관리한다.</td><td class="cond">배송사: KSE, CJL 등<br>캐시: 5분 후 자동 적용</td></tr>
+<tr><td class="rid">FR-PRC-04</td><td class="nm">관세 조회</td><td><span class="badge p-imp">중요</span></td><td><span class="actor">시스템</span></td><td class="desc">상품 카테고리별 일본 관세율을 조회하여 예상 관세를 계산한다.</td><td class="cond">참조: 일본 세관청 실행관세율표 (매년 4월 갱신)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="nfr">
+  <h2>2. 비기능 요구사항</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>요구사항 ID</th><th>분류</th><th>항목</th><th>우선순위</th><th>설명</th><th>비고</th></tr></thead>
+    <tbody>
+<tr><td class="rid">NFR-SEC-01</td><td><span class="cat">보안</span></td><td class="nm">카드 정보 미저장 (PCI DSS)</td><td><span class="badge p-req">필수</span></td><td class="desc">카드 정보를 서버에 저장하지 않는다. GMO 토크나이저로 프론트에서 토큰화 후 토큰만 전달한다.</td><td class="cond">3DS 2.0 강제 적용</td></tr>
+<tr><td class="rid">NFR-SEC-02</td><td><span class="cat">보안</span></td><td class="nm">데이터 격리</td><td><span class="badge p-req">필수</span></td><td class="desc">모든 customer 데이터는 customer_id 단위로 격리. 타인 데이터 접근 불가.</td><td class="cond">JWT 검증 + 소유권 확인</td></tr>
+<tr><td class="rid">NFR-PERF-01</td><td><span class="cat">성능</span></td><td class="nm">응답 캐싱</td><td><span class="badge p-req">필수</span></td><td class="desc">환율·배송비 요율·SiteConfig는 5분 캐싱. TrackingCache는 TTL 설정.</td><td class="cond">캐시 변경 시 즉시 무효화</td></tr>
+<tr><td class="rid">NFR-EXT-01</td><td><span class="cat">확장성</span></td><td class="nm">PG 추가 용이성</td><td><span class="badge p-imp">중요</span></td><td class="desc">신규 PG 추가는 BasePaymentProvider 구현 + registry 등록만으로 가능. 뷰 변경 없음.</td><td class="cond">Stripe, Adyen 예정</td></tr>
+<tr><td class="rid">NFR-EXT-02</td><td><span class="cat">확장성</span></td><td class="nm">다국가 배송지 설계</td><td><span class="badge p-imp">중요</span></td><td class="desc">현재 한국→일본. UserAddress.country 필드로 다국가 지원 설계.</td><td class="cond">ISO 3166-1 alpha-2</td></tr>
+<tr><td class="rid">NFR-I18N-01</td><td><span class="cat">다국어</span></td><td class="nm">다국어 필드 병행 관리</td><td><span class="badge p-req">필수</span></td><td class="desc">상품명 KO/EN, 배송지 한자/가타카나/영문 3종을 병행 관리한다. 번역 결과는 TranslationCache에 저장.</td><td class="cond">통관·DHUB API 필수 요건</td></tr>
+<tr><td class="rid">NFR-AVAIL-01</td><td><span class="cat">가용성</span></td><td class="nm">크롤러 Stateless 설계</td><td><span class="badge p-imp">중요</span></td><td class="desc">scraper-agent는 Stateless 설계. 장애 시 재시작만으로 복구 가능.</td><td class="cond">포트 3000</td></tr>
+<tr><td class="rid">NFR-AUDIT-01</td><td><span class="cat">감사</span></td><td class="nm">전체 이력 보존</td><td><span class="badge p-req">필수</span></td><td class="desc">주문 상태 변경(OrderStatusLog), 어드민 액션(AdminActionLog), 오차 기준 변경(ErrorCriteriaLog) 전체 이력 보존.</td><td class="cond">삭제 불가 로그</td></tr>
+<tr><td class="rid">NFR-API-01</td><td><span class="cat">API</span></td><td class="nm">페이지네이션</td><td><span class="badge p-req">필수</span></td><td class="desc">목록 API는 기본 20개/페이지 페이지네이션 적용.</td><td class="cond">?page= 쿼리 파라미터</td></tr>
+<tr><td class="rid">NFR-FILE-01</td><td><span class="cat">파일</span></td><td class="nm">파일 저장</td><td><span class="badge p-imp">중요</span></td><td class="desc">이미지·첨부파일은 S3에 저장. UploadedFile 모델로 메타데이터 관리.</td><td class="cond">purpose별 분류</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="flow">
+  <h2>3. 상태 흐름 요약</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>구분</th><th>상태 흐름</th></tr></thead>
+    <tbody>
+<tr><td class="nm" style="white-space:nowrap">주문(Order) 상태</td><td class="flowcell">order_received → payment_pending → paid → purchasing → purchase_complete<br>→ shipping_domestic → arrived → inspection_complete<br>→ shipping_intl → customs_clearance → shipping_jp → delivered → cancelled</td></tr>
+<tr><td class="nm" style="white-space:nowrap">주문 그룹(OrderGroup) 상태</td><td class="flowcell">pending → paid → partial → completed → cancelled</td></tr>
+<tr><td class="nm" style="white-space:nowrap">결제(PGTransaction) 상태</td><td class="flowcell">pending → auth_complete → capture_pending → captured → refunded<br>auth_complete → (취소) → cancelled</td></tr>
+<tr><td class="nm" style="white-space:nowrap">상품 상세 크롤 상태</td><td class="flowcell">pending → prefetching → ready<br>prefetching → (실패) → failed</td></tr>
+<tr><td class="nm" style="white-space:nowrap">CS 문의 상태</td><td class="flowcell">pending → in_progress → resolved</td></tr>
+<tr><td class="nm" style="white-space:nowrap">스크래핑 요청 상태</td><td class="flowcell">pending → processing → completed / failed</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="api">
+  <h2>4. 외부 API 연동</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>외부 시스템</th><th>API / 엔드포인트</th><th>용도</th><th>비고</th></tr></thead>
+    <tbody>
+<tr><td class="nm">GMO Payment Gateway</td><td class="rid">EntryTran</td><td class="desc">거래 등록 → AccessID/Pass 발급</td><td class="cond">Auth 60일 보유</td></tr>
+<tr><td class="nm">GMO Payment Gateway</td><td class="rid">ExecTran</td><td class="desc">결제 실행 (토큰 + 인증)</td><td class="cond">3DS 2.0 포함</td></tr>
+<tr><td class="nm">GMO Payment Gateway</td><td class="rid">AlterTran</td><td class="desc">Capture / 취소 / 환불</td><td class="cond">부분환불 180일</td></tr>
+<tr><td class="nm">GMO PayPay</td><td class="rid">QR 결제 API</td><td class="desc">PayPay QR 생성·확정</td><td class="cond">결제 즉시 Capture</td></tr>
+<tr><td class="nm">DHUB (FastBox)</td><td class="rid">POST /api/Shipping/RegisterOrder</td><td class="desc">주문 등록 → FB 송장번호 채번</td><td class="cond">CI 정보 포함</td></tr>
+<tr><td class="nm">DHUB (FastBox)</td><td class="rid">GET /api/Tracking</td><td class="desc">배송 추적 조회</td><td class="cond">주기적 폴링</td></tr>
+<tr><td class="nm">DHUB (FastBox)</td><td class="rid">POST /api/Instruction</td><td class="desc">배송지시 (창고 → 발송)</td><td class="cond">최대 200건 일괄</td></tr>
+<tr><td class="nm">LINE Messaging API</td><td class="rid">Push Message API</td><td class="desc">주문 상태 변경 알림</td><td class="cond">LINE UID 기준</td></tr>
+<tr><td class="nm">LINE OAuth 2.0</td><td class="rid">Authorization Code Flow</td><td class="desc">소셜 로그인 → JWT 발급</td><td class="cond"></td></tr>
+<tr><td class="nm">환율 API</td><td class="rid">(외부 환율 서비스)</td><td class="desc">JPY/KRW 실시간 환율</td><td class="cond">5분 캐시</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  KOOM 요구사항 정의서 · 출처 <code>KOOM_요구사항정의서.xlsx</code> · 매핑·테스트는 <code>요구사항추적표.md</code> · 화면 흐름은 <code>ia.html</code>
+</footer>
+</div>
+</body>
+</html>
