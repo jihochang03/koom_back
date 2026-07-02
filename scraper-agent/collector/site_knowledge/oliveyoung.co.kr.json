@@ -1,0 +1,14 @@
+{
+  "collection": {
+    "access_method": "chrome",
+    "notes": "simple 모드 403 차단. chrome 모드 필요. Next.js SSR 앱(CSS Module 클래스명 빌드마다 변동 → 부분일치 사용). 가격/옵션은 __next_f script 태그 JSON에서 추출. 이미지는 swiper-slide img alt 속성에 원본 URL 포함(쿼리스트링 제거). 평점/리뷰는 HTML에 직접 노출. 배송비는 data-qa-name='text-product-normal-delivery-info' 내 텍스트 파싱.",
+    "network_patterns": [
+      "oliveyoung.co.kr/goods/api/v1/",
+      "oliveyoung.co.kr/claim-front/api/v1/goods/getGoodsQnACount"
+    ],
+    "wait_for_selector": ".GoodsDetailCarousel_visual-container__1kSZN"
+  },
+  "domain": "oliveyoung.co.kr",
+  "created_at": "2026-06-26T10:41:09",
+  "updated_at": "2026-06-26T15:02:02"
+}

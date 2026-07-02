@@ -35,6 +35,9 @@ SITE_CONFIG_DEFAULTS = [
     ('DK_PHOTO_INSPECTION_JPY',        '300',    'pricing', '사진 검수 서비스 (엔)'),
     ('DK_SPEED_SHIP_JPY',              '500',    'pricing', '스피드 출하 서비스 (엔)'),
     ('DK_POINTS_RATE',                 '0.01',   'pricing', '포인트 적립률 (예: 0.01 = 1%, 합계 미포함)'),
+    ('CUSTOMS_REFUND_NO_RESPONSE_DAYS','7',      'tariff',  '통관 거절 안내 후 고객 미응답 시 부분환불 가능 기한(일)'),
+    ('DELIVERY_FAILURE_STORAGE_DAYS',  '14',     'shipping','배송 실패 후 고객 미응답 시 패스트박스 보관 기한(일)'),
+    ('DELIVERY_FAILURE_RETURN_THRESHOLD_JPY','10000','shipping','배송 실패 처분 가액 분기 기준(엔): 이상이면 반품, 미만이면 폐기'),
 
     # ── 배송 상수 ───────────────────────────────────────────────────────────────
     ('CJL_TAX_EXEMPT_THRESHOLD_JPY',   '10000',  'shipping', 'CJL 면세 기준 Invoice 금액 (엔)'),

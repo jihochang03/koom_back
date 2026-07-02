@@ -11,6 +11,29 @@ import fs from "fs";
 
 const TMP_BASE = path.resolve(__dirname, "../../../../templates");
 
+// ── 자가치유(self-healing) ──────────────────────────────────────────────────
+// 템플릿이 실행됐으나 결과가 불충분(사이트 리뉴얼 등)하면, 백그라운드로 빌더 에이전트를
+// 호출해 템플릿을 증분 재빌드한다. 유료(Claude) 동작이므로 기본 OFF + 도메인별 쿨다운.
+//   활성화: SELF_HEAL=1   쿨다운: SELF_HEAL_COOLDOWN_MS (기본 6시간)
+const _healCooldown = new Map<string, number>();
+function maybeSelfHeal(
+  domain: string, url: string, category: string | null, log: (m: string) => void
+): void {
+  if (process.env.SELF_HEAL !== "1") return;
+  const now = Date.now();
+  const cooldownMs = Number(process.env.SELF_HEAL_COOLDOWN_MS ?? 6 * 3600 * 1000);
+  if (now - (_healCooldown.get(domain) ?? 0) < cooldownMs) return;
+  _healCooldown.set(domain, now);
+  log(`↻ 자가치유 트리거: ${domain} 템플릿 불충분 → 백그라운드 재빌드`);
+  // fire-and-forget (응답을 막지 않음). 동적 import로 순환참조 회피.
+  import("../../../agent/template-builder-agent")
+    .then(({ runTemplateBuilder }) =>
+      runTemplateBuilder(`heal-${now}`, [{ role: "user", content: url }], {}, category, "detail")
+    )
+    .then(() => log(`✓ 자가치유 완료: ${domain}`))
+    .catch((e) => log(`⚠ 자가치유 실패(${domain}): ${e instanceof Error ? e.message : e}`));
+}
+
 const OPTION_TRIGGER_SELECTORS = [
   '[class*="option"]', '[class*="variant"]', '[class*="color"]',
   '[class*="size"]',   '[class*="package"]', '[class*="plan"]',
@@ -94,6 +117,7 @@ export default async function handler(
     }
     if (raw) log(`⚠  전달된 템플릿 결과 불충분 (제목·가격 없음) — Claude 분석으로 fallback`);
     else log(`⚠  전달된 템플릿 실행 실패 — Claude 분석으로 fallback`);
+    maybeSelfHeal(domain, url, category, log);
   }
 
   // ── 1순위: 우리 서버 로컬 캐시 (직접 사용 시 폴백) ──────────────────────
@@ -106,6 +130,7 @@ export default async function handler(
     }
     if (raw) log(`⚠  템플릿 결과 불충분 (제목·가격 없음) — Claude 분석으로 fallback`);
     else log(`⚠  템플릿 실행 실패 — Claude 분석으로 fallback`);
+    maybeSelfHeal(domain, url, category, log);
   }
 
   let html: string;

@@ -11,6 +11,30 @@ from .serializers import (
     PurchaseCompleteSerializer,
 )
 
+def _guard_change_of_mind(order_number, reason_type):
+    """단순변심 취소/환불 컷오프 가드.
+
+    `reason_type == 'change_of_mind'` 이고 주문이 FastBox 인계(preparing_dispatch)
+    이후이면 차단 사유 dict 를 반환, 그 외엔 None(통과). 귀책 사유는 항상 통과.
+    """
+    if reason_type != 'change_of_mind':
+        return None
+    from apps.orders.models import Order
+    from apps.orders.policy import cancel_eligibility
+
+    order = Order.objects.filter(order_number=order_number).first()
+    if not order:
+        return None
+    elig = cancel_eligibility(order)
+    if elig['can_cancel_change_of_mind']:
+        return None
+    return {
+        'error':         elig['reason'],
+        'current_stage': elig['current_stage'],
+        'cutoff_stage':  elig['cutoff_stage'],
+    }
+
+
 # ── Inquiry ───────────────────────────────────────────────────────────────────
 
 class InquiryListView(APIView):
@@ -69,6 +93,9 @@ class CancelRequestListView(APIView):
         d = ser.validated_data
         if CancelRequest.objects.filter(order_number=d['order_number']).exists():
             return Response({'error': '이미 취소 요청이 존재합니다.'}, status=http_status.HTTP_409_CONFLICT)
+        blocked = _guard_change_of_mind(d['order_number'], d['reason_type'])
+        if blocked:
+            return Response(blocked, status=http_status.HTTP_409_CONFLICT)
         obj = CancelRequest.objects.create(**d)
         return Response(CancelRequestSerializer(obj).data, status=http_status.HTTP_201_CREATED)
 
@@ -113,6 +140,9 @@ class RefundRequestListView(APIView):
         d = ser.validated_data
         if RefundRequest.objects.filter(order_number=d['order_number']).exists():
             return Response({'error': '이미 환불 요청이 존재합니다.'}, status=http_status.HTTP_409_CONFLICT)
+        blocked = _guard_change_of_mind(d['order_number'], d['reason_type'])
+        if blocked:
+            return Response(blocked, status=http_status.HTTP_409_CONFLICT)
         obj = RefundRequest.objects.create(**d)
         return Response(RefundRequestSerializer(obj).data, status=http_status.HTTP_201_CREATED)
 

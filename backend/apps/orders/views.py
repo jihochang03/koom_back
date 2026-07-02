@@ -75,7 +75,11 @@ class OrderListView(APIView):
 class OrderDetailView(APIView):
     def get(self, request, order_number):
         order = get_object_or_404(Order, order_number=order_number)
-        return Response(OrderSerializer(order).data)
+        from .policy import cancel_eligibility
+        data = OrderSerializer(order).data
+        # 단순변심 취소 가능 여부 (프론트 취소 버튼 노출 제어) — FastBox 인계 컷오프
+        data['cancel_eligibility'] = cancel_eligibility(order)
+        return Response(data)
 
 
 class OrderStatusUpdateView(APIView):

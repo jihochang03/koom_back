@@ -54,7 +54,8 @@
 | S-07 결제 | S-06 | → S-08 |
 | S-08 주문 완료 | S-07 | → S-10 / S-02 |
 | S-09 주문 목록 | S-02 | → S-10 |
-| **S-10 주문 상세** | **S-08 · S-09** (수렴) | → S-11 · S-12 · S-13 · P-01 |
+| **S-10 주문 상세** | **S-08 · S-09** (수렴) | → S-10b · S-11 · S-12 · S-13 · P-01 |
+| S-10b 배송 추적 타임라인 | S-10 | (5단계 진행바·이벤트 로그 조회, 종단) |
 | S-11~13 문의·취소·환불 | S-10 | → (처리 후 상태 조회) |
 | S-14 마이(a~e) | S-02 | (내부 서브: 배송지·포인트·쿠폰·알림·위시) |
 | S-16~18 콘텐츠 | S-02 | (조회) |
@@ -63,10 +64,11 @@
 ### CS 콘솔 (process 체인)
 | 화면 | 들어옴 (in) | 나감 (out) |
 |------|-------------|------------|
-| C-05 담당 추적(허브) | CS 로그인 | → C-01 · C-02 · C-03 · C-04 (드릴다운) |
+| C-05 담당 추적(허브) | CS 로그인 | → C-01 · C-02 · C-06 · C-03 · C-04 (드릴다운) |
 | C-01 대리구매 | C-05, 결제완료(paid) 주문 | → C-02 (구매완료·입고 후) |
-| C-02 검수 | C-01(입고), C-05 | → C-03 (검수완료 후) |
-| C-03 FastBox 인계 | C-02(검수완료), C-05 | → (국제배송, 시스템 추적) |
+| C-02 검수 | C-01(입고), C-05 | → C-06 (HS 분류) → C-03 |
+| C-06 HS 통관 분류 검수 | C-02(검수), C-05 | → C-03 (확정 HS코드 인계) |
+| C-03 FastBox 인계 | C-02·C-06(검수완료·HS확정), C-05 | → (국제배송, 시스템 추적) |
 | C-04 CS 응대 | C-05 | → H-03 (환불 승인 인계) |
 
 ### 본사 어드민 (radial)
@@ -143,7 +145,12 @@
 ### S-10 · 주문 상세(13단계 추적)  `[필요: group_number]`
 - **조회**: `GET /api/orders/groups/{group_number}/` + `/{order}/status-log/` + `/{order}/pg/`
 - **표시**: 13단계 타임라인(OrderStatusLog.stage), 상품별 가격 내역, PG 상태, 배송 추적(fb_invoice_no, tracking_number, delay)
-- **⎇ 분기**: 문의 → **S-11** · 취소 → **S-12** · 환불 → **S-13** · 스냅샷 → **P-01**
+- **⎇ 분기**: 배송추적 → **S-10b** · 문의 → **S-11** · 취소 → **S-12** · 환불 → **S-13** · 스냅샷 → **P-01**
+
+### S-10b · 배송 추적 타임라인  `[필요: order_number]`
+- **조회**: `GET /api/logistics/{order}/timeline/`
+- **표시**: 5단계 진행바(상품발송→국제운송→통관→국내배송→배송완료, `stages[].status`), 날짜별 이벤트 로그(`events_by_date`: 통관·X-Ray·물류센터·배송완료 등), 최종 배송정보(`delivery`: delivered_at·region)
+- **비고**: 이벤트는 LOG-08(`POST .../timeline/`)·배송추적 동기화(LOG-03)가 적재·5단계 자동 분류
 
 ### S-11 / S-12 / S-13 · 문의 / 취소 / 환불  `[필요: JWT, (선택) order_number]`
 - **S-11 문의**: `POST /api/cs/inquiries/` — inquiry_type(9종), title, content, images[]
@@ -174,13 +181,13 @@
 ```
 [CS 로그인] ─▶ C-05 내 담당 건 추적(대시보드)
                   │
-   ┌──────────────┼───────────────┬───────────────┐
-   ▼              ▼               ▼               ▼
-C-01 대리구매   C-02 검수       C-03 FastBox    C-04 CS응대
-(paid 주문)    (arrived 주문)   인계            (문의/취소/환불)
-   │              │               │               │
-   ▼              ▼               ▼               ▼
-purchasing   inspection      shipping_intl    resolved/approved
+   ┌──────────────┼───────────────┬───────────────┬───────────────┐
+   ▼              ▼               ▼               ▼               ▼
+C-01 대리구매   C-02 검수    →  C-06 HS분류  →  C-03 FastBox    C-04 CS응대
+(paid 주문)    (arrived 주문)  (HS코드 확정)    인계            (문의/취소/환불)
+   │              │               │               │               │
+   ▼              ▼               ▼               ▼               ▼
+purchasing   inspection      confirmed       shipping_intl    resolved/approved
 ```
 
 ### C-05 · 내 담당 건 추적  `[필요: cs_user]`
@@ -197,10 +204,16 @@ purchasing   inspection      shipping_intl    resolved/approved
 ### C-02 · 상품 검수  `[필요: cs_user, 입고 주문]`
 - **입력**: `POST /api/logistics/{order}/inspection/` — result(pass/issue), components_match, has_defect, issue_reason, inspection_photos[], inspector
 - **처리**: LogisticsInfo upsert → `status→inspection` → issue 시 **CS Inquiry(inspection_issue) 자동 생성**
-- **→**: pass → **C-03**
+- **→**: pass → **C-06**(HS 분류) → **C-03**
 
-### C-03 · FastBox(DHUB) 인계  `[필요: cs_user, 검수완료 주문]`
-- **등록**: `POST /api/logistics/{order}/dhub/register/` — address(미입력 시 **기본 UserAddress 자동 채움**) → fb_invoice_no 채번, ShippingTracking 생성, log preparing_dispatch
+### C-06 · HS코드 통관 분류 검수  `[필요: cs_user, 검수 상품]`
+- **조회**: `GET /api/tariff/products/{id}/classification/` — AI 추천 HS코드·분류경로(full_path)+**선정 사유(reason)**+대안 후보(`alternatives`)
+- **확정**: `POST /api/tariff/products/{id}/classification/` — final_hs_code, final_category, final_full_path, decision_source(ai_confirmed/alternative/manual), inspector_note
+- **처리**: ProductHsClassification → status=confirmed. 확정값은 fastbox 등록(C-03)에 자동 주입
+- **→**: 확정 → **C-03**
+
+### C-03 · FastBox(DHUB) 인계  `[필요: cs_user, 검수완료·HS확정 주문]`
+- **등록**: `POST /api/logistics/{order}/dhub/register/` — address(미입력 시 **기본 UserAddress 자동 채움**, **HS코드·통관 카테고리는 검수 확정값(C-06) 자동 주입**) → fb_invoice_no 채번, ShippingTracking 생성, log preparing_dispatch
 - **배송지시**: `POST /api/logistics/dhub/instruct/` — fb_invoice_nos[](≤200), requester, arrival_due_date → dhub_instruction_no, 대상 주문 `→shipping_intl`
 - **↺**: 이후 `tracking/sync/` 폴링으로 통관→일본배송 추적
 
@@ -269,10 +282,12 @@ purchasing   inspection      shipping_intl    resolved/approved
 | 그룹 상태 동기화 | 주문 상태 변경 시 | ORD-03 |
 | 가격 오차 평가 | 대리구매 완료 시 | ORD-04 |
 | 배송 추적 폴링 | 주기/수동 `tracking/sync/` | LOG-03 |
+| 추적 이벤트 적재·5단계 분류 | `POST .../timeline/` (sync 시 자동) | LOG-08 |
 | 지연 감지 | 폴링 시 24/48h 계산 | LOG-04 |
 | 단계별 알림 | 상태 변경 시 `/api/notify/send/` | NTF-01 |
 | 환율 캐싱 | `/api/pricing/exchange-rate/` | PRC-01 |
 | 가격 계산 | `/api/pricing/quote/` | PRC-02 |
 | 관세 조회 | `/api/tariff/lookup/` | PRC-04 |
+| HS 분류 검수(추천·확정) | `/api/tariff/classify/`, `/products/{id}/classification/` | LOG-06 |
 | 번역 캐시 | `/api/translate/` | I18N-01 |
 | 파일 저장 | `/api/storage/upload/` | FILE-01 |

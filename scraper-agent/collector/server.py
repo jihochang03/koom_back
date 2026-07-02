@@ -127,6 +127,170 @@ def _find_option_groups_generic(data, _depth: int = 0) -> list:
     return []
 
 
+def _extract_option_tree_from_components(net_log: list) -> list:
+    """
+    option_components/option_groups 구조(Ably 등 depth 기반 캐스케이드 API)에서 옵션 그룹 집계.
+    옵션이 여러 응답에 분산됨: brief={option_groups: 그룹명·depth}, /options?depth=N={name, option_components:[{name,depth}]}.
+    도메인 무관 — 'option_components' 키로 감지. depth별 값을 모아 그룹 순서대로 조립.
+    반환: [{'type': 그룹명, 'values': [...], 'soldout': []}, ...]
+    """
+    import json as _j
+    group_order: list = []     # [(depth, name)]
+    depth_values: dict = {}    # depth -> [값]
+    depth_name: dict = {}      # depth -> 그룹명
+    for e in net_log or []:
+        body = e.get('body') or ''
+        if 'option_components' not in body and 'option_groups' not in body:
+            continue
+        try:
+            data = _j.loads(body)
+        except Exception:
+            continue
+        # brief: 전체 그룹 구조 (이름·depth 순서)
+        ogs = _deep_find(data, 'option_groups')
+        if isinstance(ogs, list) and not group_order:
+            for g in ogs:
+                if isinstance(g, dict) and g.get('name'):
+                    group_order.append((g.get('depth'), g['name']))
+        # depth 응답: 최상위 name + option_components
+        comps = data.get('option_components') if isinstance(data, dict) else None
+        if isinstance(comps, list) and comps:
+            vals = [c.get('name') for c in comps if isinstance(c, dict) and c.get('name')]
+            d = comps[0].get('depth') if isinstance(comps[0], dict) else None
+            if vals and d is not None and len(vals) > len(depth_values.get(d, [])):
+                depth_values[d] = vals
+                if data.get('name'):
+                    depth_name[d] = data['name']
+    groups: list = []
+    if group_order:
+        for d, name in group_order:
+            groups.append({'type': name, 'values': depth_values.get(d, []), 'soldout': []})
+    elif depth_values:
+        for d in sorted(depth_values):
+            groups.append({'type': depth_name.get(d, f'옵션{d}'), 'values': depth_values[d], 'soldout': []})
+    return groups
+
+
+def _fetch_option_depths(net_log: list) -> list:
+    """
+    연계(캐스케이드) 옵션 대응: option_groups에 depth>=2 그룹이 있으면,
+    캡처한 옵션 요청 헤더(커스텀 인증 토큰 포함)로 deeper-depth 옵션 API를 **서버에서 직접 호출**한다.
+    클릭 불필요. Ably 류 `/api/.../options/?depth=N&goods_option_sno=...` 패턴.
+    반환: network_log에 추가할 [{url, body, ct}].
+    """
+    import json as _j
+    import requests
+    base = None
+    targets = []  # [(depth, sno)]
+    for e in net_log or []:
+        u = e.get('url', '') or ''
+        if '/options/' in u and 'depth=1' in u and not base:
+            base = u.split('?')[0]
+        body = e.get('body') or ''
+        if 'option_groups' in body:
+            try:
+                data = _j.loads(body)
+            except Exception:
+                continue
+            ogs = _deep_find(data, 'option_groups')
+            if isinstance(ogs, list):
+                for g in ogs:
+                    if isinstance(g, dict) and (g.get('depth') or 0) >= 2 and g.get('first_goods_option_sno'):
+                        targets.append((g['depth'], g['first_goods_option_sno']))
+    if not base or not targets:
+        return []
+    # 같은 엔드포인트(options) 요청에서 캡처한 헤더 확보 → 그대로 재생(커스텀 인증 헤더 포함)
+    from urllib.parse import urlparse as _urlp
+    base_host = _urlp(base).netloc
+    cap_headers = {}
+    for e in net_log or []:
+        if '/options/' in (e.get('url') or '') and isinstance(e.get('headers'), dict) and e['headers']:
+            cap_headers = e['headers']
+            break
+    if not cap_headers:
+        for e in net_log or []:
+            if _urlp(e.get('url', '')).netloc == base_host and isinstance(e.get('headers'), dict) and e['headers']:
+                cap_headers = e['headers']
+                break
+    _drop = {'host', 'content-length', 'connection', 'cookie', 'accept-encoding'}
+    headers = {k: v for k, v in cap_headers.items() if k.lower() not in _drop}
+    headers.setdefault('Accept', 'application/json')
+
+    out = []
+    seen = set()
+    for depth, sno in targets:
+        if (depth, sno) in seen:
+            continue
+        seen.add((depth, sno))
+        for param in ('goods_option_sno', 'parent_goods_option_sno', 'first_goods_option_sno'):
+            u = f"{base}?depth={depth}&{param}={sno}"
+            try:
+                r = requests.get(u, headers=headers, timeout=12)
+            except Exception:
+                continue
+            if r.status_code == 200 and 'option_components' in r.text:
+                out.append({'url': u, 'body': r.text[:100000], 'ct': 'application/json'})
+                break
+    return out
+
+
+def _cascade_first_value_and_need(net_log: list):
+    """캐스케이드 옵션 미해결 여부 + 1단계 첫 값 텍스트 반환. (need, first_value)."""
+    try:
+        groups = _extract_option_tree_from_components(net_log)
+    except Exception:
+        return False, None
+    if len(groups) < 2:
+        return False, None
+    first = (groups[0].get('values') or [None])[0]
+    need = any(not g.get('values') for g in groups[1:])   # 2단계 이후 값이 빈 그룹 있음
+    return (bool(need and first), first)
+
+
+def _trigger_cascade(driver, first_value: str):
+    """
+    연계 옵션을 '범용적으로' 트리거: 옵션 영역을 열고(선택하기/옵션 버튼),
+    **API에서 이미 알아낸 1단계 첫 값 텍스트**(예: '크림')를 가진 요소를 클릭한다.
+    클릭은 앱이 depth=2 API를 호출하게 하는 트리거일 뿐 — 값은 network_log에서 파싱(DOM 무관).
+    반환: 클릭한 텍스트 or None.
+    """
+    js = r"""
+    const cb = arguments[arguments.length - 1];
+    const target = arguments[0];
+    (async () => {
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+      function clickText(rx) {
+        const els = document.querySelectorAll('button,a,div,li,span,p');
+        for (let i = 0; i < els.length; i++) {
+          const e = els[i];
+          if (e.offsetParent === null) continue;
+          const t = (e.textContent || '').trim();
+          if (t && t.length < 30 && rx.test(t)) { try { e.click(); return t; } catch (x) {} }
+        }
+        return null;
+      }
+      // 1) 옵션 영역 열기 (구매/장바구니 버튼은 피하고 '선택하기/옵션 선택'만)
+      clickText(/선택하기$|^옵션\s*선택$|옵션선택$/);
+      await sleep(900);
+      // 2) 알려진 1단계 첫 값 텍스트를 정확히 가진 요소 클릭
+      let clicked = null;
+      const els = document.querySelectorAll('div,li,button,span,p,a');
+      for (let i = 0; i < els.length; i++) {
+        const e = els[i];
+        if (e.offsetParent === null) continue;
+        if ((e.textContent || '').trim() === target) { try { e.click(); clicked = target; break; } catch (x) {} }
+      }
+      await sleep(1800);
+      cb(clicked);
+    })();
+    """
+    try:
+        driver.set_script_timeout(15)
+        return driver.execute_async_script(js, first_value)
+    except Exception:
+        return None
+
+
 def _extract_options_from_network_log(net_log: list) -> list:
     """네트워크 로그 JSON 응답에서 옵션 그룹 추출."""
     import json as _j
@@ -167,7 +331,97 @@ def _extract_options_from_network_log(net_log: list) -> list:
                             url[-80:], len(groups), [g['type'] for g in groups])
         except Exception as e:
             logger.debug("[네트워크 옵션] 파싱 오류 %s: %s", url[-40:], e)
+
+    # option_components/option_groups 구조(Ably 등 depth API)는 여러 응답에 분산 → 집계해서 비교
+    try:
+        tree = _extract_option_tree_from_components(net_log)
+    except Exception as e:
+        logger.debug("[네트워크 옵션] 트리 집계 오류: %s", e)
+        tree = []
+    if tree:
+        _vals = lambda gs: sum(len(g.get('values') or []) for g in gs)
+        # 그룹 수가 더 많거나(=깊은 캐스케이드 포착), 총 값 수가 더 많으면 트리 채택
+        if len(tree) > len(best) or _vals(tree) > _vals(best):
+            logger.info("[네트워크 옵션] 트리 집계 채택 → %d그룹: %s",
+                        len(tree), [(g['type'], len(g['values'])) for g in tree])
+            best = tree
     return best
+
+
+# ── network JSON → 필드 매핑 (데이터 기반) — 템플릿의 _pick_api 코드 대체 ─────────
+# 도메인별로 "어느 API 응답의 어느 경로에서 어느 필드를 뽑을지"를 데이터로 선언.
+# path 문법: "a.b.c" / "a[0].b" / "*key"(중첩 어디서든 key 깊이탐색).
+# site_knowledge.collection.network_map(에이전트 학습값)과 병합된다.
+_NETWORK_MAP_DEFAULTS = {
+    "coupang.com": [
+        {"match": "/next-api/review", "field": "rating", "path": "*ratingAverage"},
+        {"match": "/next-api/review", "field": "review_count", "path": "*ratingCount"},
+    ],
+}
+
+
+def _deep_find(obj, key):
+    stack = [obj]
+    while stack:
+        cur = stack.pop()
+        if isinstance(cur, dict):
+            if key in cur and cur[key] is not None:
+                return cur[key]
+            stack.extend(cur.values())
+        elif isinstance(cur, list):
+            stack.extend(cur)
+    return None
+
+
+def _json_dig(obj, path: str):
+    """JSON에서 경로로 값 추출. '*key'=깊이탐색, 'a.b[0].c'=경로탐색."""
+    if not path:
+        return None
+    if path.startswith("*"):
+        return _deep_find(obj, path[1:])
+    cur = obj
+    for part in path.split("."):
+        m = _re.match(r"([^\[]*)((?:\[\d+\])*)", part)
+        name, idxs = m.group(1), m.group(2)
+        if name:
+            if isinstance(cur, dict):
+                cur = cur.get(name)
+            else:
+                return None
+        for im in _re.finditer(r"\[(\d+)\]", idxs):
+            i = int(im.group(1))
+            cur = cur[i] if isinstance(cur, list) and i < len(cur) else None
+        if cur is None:
+            return None
+    return cur
+
+
+def _network_map_for(url: str) -> list:
+    for k, v in _NETWORK_MAP_DEFAULTS.items():
+        if k in url:
+            return list(v)
+    return []
+
+
+def _apply_network_map(network_log: list, mappings: list) -> dict:
+    """매핑에 따라 network_log의 API 응답에서 필드 추출. 반환: {field: value}."""
+    import json
+    out = {}
+    for mp in mappings or []:
+        field = mp.get("field"); match = mp.get("match"); path = mp.get("path")
+        if not (field and match and path) or field in out:
+            continue
+        for e in network_log or []:
+            if match in (e.get("url") or ""):
+                try:
+                    body = json.loads(e.get("body") or "")
+                except Exception:
+                    continue
+                v = _json_dig(body, path)
+                if v is not None:
+                    out[field] = v
+                    break
+    return out
 
 
 def _run_html_parser(html: str, url: str, page_title: str = '', network_log: list | None = None) -> dict:
@@ -195,6 +449,32 @@ def _run_html_parser(html: str, url: str, page_title: str = '', network_log: lis
                             len(info.product_options), len(net_groups))
 
         result['product_options'] = opts
+
+        # network_map 레시피로 rating/review 등 API 필드 보강 (빈 칸만)
+        if network_log:
+            try:
+                from urllib.parse import urlparse as _up
+                domain = _up(url).netloc.replace("www.", "")
+                mappings = _network_map_for(url)
+                coll = site_knowledge.get_collection(domain) or {}
+                mappings += (coll.get("network_map") or [])
+                if mappings:
+                    netfields = _apply_network_map(network_log, mappings)
+                    for f, v in netfields.items():
+                        if result.get(f) in (None, [], ""):
+                            if f == "rating":
+                                try: result[f] = float(v)
+                                except Exception: pass
+                            elif f == "review_count":
+                                try: result[f] = int(float(v))
+                                except Exception: pass
+                            else:
+                                result[f] = v
+                    if netfields:
+                        logger.info("[network_map] %s → %s", domain, list(netfields.keys()))
+            except Exception as e:
+                logger.debug("[network_map] 실패 (무시): %s", e)
+
         logger.info("[HTML파서] %s: 가격=%s 옵션=%d그룹", shop_type, info.discounted_price, len(opts))
         return result
     except Exception as e:
@@ -254,15 +534,32 @@ window._netLog = [];
         if (!url) return true;
         return /\.(jpg|jpeg|png|gif|webp|svg|css|woff2?|ttf|eot|ico|mp4|mp3|ogg)(\?|$)/i.test(url);
     }
+    // 요청 헤더 전체 추출 (커스텀 인증 헤더 포함 — 연계 옵션 deeper API 충실 재생용)
+    function _hdrs(init, reqObj) {
+        var out = {};
+        try {
+            var h = init && init.headers;
+            if (h) {
+                if (typeof Headers !== 'undefined' && h instanceof Headers) h.forEach(function(v, k) { out[k] = v; });
+                else if (Array.isArray(h)) h.forEach(function(p) { out[p[0]] = p[1]; });
+                else for (var k in h) out[k] = h[k];
+            }
+            if (reqObj && reqObj.headers && typeof reqObj.headers.forEach === 'function')
+                reqObj.headers.forEach(function(v, k) { if (!(k in out)) out[k] = v; });
+        } catch(e) {}
+        return out;
+    }
     var _origFetch = window.fetch;
     window.fetch = function() {
-        var url = String(arguments[0] instanceof Request ? arguments[0].url : arguments[0]);
+        var reqObj = arguments[0] instanceof Request ? arguments[0] : null;
+        var url = String(reqObj ? reqObj.url : arguments[0]);
+        var hdrs = _hdrs(arguments[1], reqObj);
         return _origFetch.apply(this, arguments).then(function(r) {
             if (!_skip(url)) {
                 try {
                     r.clone().text().then(function(t) {
                         if (t && t.length > 50)
-                            window._netLog.push({url: url, body: t.slice(0, 100000), ct: r.headers.get('content-type')||''});
+                            window._netLog.push({url: url, body: t.slice(0, 100000), ct: r.headers.get('content-type')||'', headers: hdrs});
                     }).catch(function(){});
                 } catch(e) {}
             }
@@ -271,9 +568,15 @@ window._netLog = [];
     };
     var _origOpen = XMLHttpRequest.prototype.open;
     var _origSend = XMLHttpRequest.prototype.send;
+    var _origSetH = XMLHttpRequest.prototype.setRequestHeader;
     XMLHttpRequest.prototype.open = function(m, u) {
         this._capUrl = String(u);
+        this._capHdrs = {};
         return _origOpen.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.setRequestHeader = function(k, v) {
+        try { this._capHdrs = this._capHdrs || {}; this._capHdrs[k] = v; } catch(e) {}
+        return _origSetH.apply(this, arguments);
     };
     XMLHttpRequest.prototype.send = function() {
         var self = this;
@@ -281,7 +584,7 @@ window._netLog = [];
             try {
                 var ct = self.getResponseHeader('content-type') || '';
                 if (!_skip(self._capUrl) && self.responseText && self.responseText.length > 50)
-                    window._netLog.push({url: self._capUrl, body: self.responseText.slice(0, 100000), ct: ct});
+                    window._netLog.push({url: self._capUrl, body: self.responseText.slice(0, 100000), ct: ct, headers: self._capHdrs || {}});
             } catch(e) {}
         });
         return _origSend.apply(this, arguments);
@@ -294,6 +597,286 @@ _CHALLENGE_PATTERNS = [
     'access denied', 'access_denied', '비정상적인 접근', '잠시 후 다시',
     '보안 확인', '자동화된 요청',
 ]
+
+
+def _lazy_scroll(driver, max_steps: int = 9, pause: float = 0.45):
+    """
+    페이지를 한 화면씩 끝까지 스크롤 → 지연로딩(이미지 갤러리·리뷰·평점)을 트리거하고
+    그에 따른 fetch/XHR(리뷰 API 등)가 window._netLog 에 잡히도록 한다.
+    바닥 도달 또는 높이 변화 없음 시 종료, 마지막에 맨 위로 복귀.
+    """
+    try:
+        last_total = 0
+        for _ in range(max_steps):
+            driver.execute_script("window.scrollBy(0, Math.round(window.innerHeight * 0.9));")
+            time.sleep(pause)
+            pos = driver.execute_script("return (window.scrollY || 0) + window.innerHeight;") or 0
+            total = driver.execute_script("return document.body.scrollHeight;") or 0
+            if total and pos >= total - 80:
+                break
+            if total and total == last_total:
+                break
+            last_total = total
+        time.sleep(1.0)  # 지연 XHR(리뷰 등) 응답 대기
+        driver.execute_script("window.scrollTo(0, 0);")
+        time.sleep(0.2)
+    except Exception:
+        pass
+
+
+def _read_net_log(driver, limit: int = 60) -> list:
+    """window._netLog(주입된 fetch/XHR 캡처)를 읽어 반환. 실패 시 []."""
+    import json as _j
+    try:
+        raw = driver.execute_script(
+            f"return JSON.stringify((window._netLog||[]).slice(0,{int(limit)}));"
+        )
+        return _j.loads(raw or '[]')
+    except Exception:
+        return []
+
+
+# 콘텐츠 iframe 후보에서 제외할 src 조각 (광고·로깅·동기화 프레임)
+_IFRAME_SKIP = (
+    'about:blank', 'syncservice', 'click_log', 'cdls', '/log', 'ads',
+    'doubleclick', 'criteo', 'googlesyndication', 'facebook', 'analytics',
+)
+# 콘텐츠(상세·리뷰) iframe 우선 키워드
+_IFRAME_CONTENT_KW = ('detail', 'review', 'itemdetail', 'goods', 'eval', 'contents', 'pdp')
+
+
+def _capture_iframes(driver, max_frames: int = 3, max_inner_chars: int = 300_000):
+    """
+    동일 출처 콘텐츠 iframe(상세·리뷰)에 진입해 HTML·네트워크를 수집.
+    Gmarket 처럼 상세/리뷰가 /Item/ItemDetailV2 같은 iframe 안에 있는 경우 대응.
+    반환: (extra_html, extra_net_log)  — 교차출처/접근불가 프레임은 안전하게 스킵.
+    """
+    from selenium.webdriver.common.by import By
+    extra_parts: list[str] = []
+    extra_net: list = []
+    try:
+        frames = driver.find_elements(By.TAG_NAME, "iframe")
+    except Exception:
+        return "", []
+
+    cand = []
+    for fr in frames:
+        try:
+            src = (fr.get_attribute("src") or "").strip()
+        except Exception:
+            src = ""
+        low = src.lower()
+        if not src or any(b in low for b in _IFRAME_SKIP):
+            continue
+        score = 2 if any(k in low for k in _IFRAME_CONTENT_KW) else 0
+        cand.append((score, fr, src))
+    cand.sort(key=lambda x: -x[0])
+
+    for _score, fr, src in cand[:max_frames]:
+        try:
+            driver.switch_to.frame(fr)
+        except Exception:
+            continue
+        try:
+            try:
+                _lazy_scroll(driver, max_steps=6, pause=0.4)
+            except Exception:
+                pass
+            inner = ""
+            try:
+                inner = driver.execute_script("return document.documentElement.outerHTML;") or ""
+            except Exception:
+                inner = ""  # 교차출처 → 접근 불가, 스킵
+            if inner and len(inner) > 200:
+                extra_parts.append(f"\n<!-- IFRAME src={src[:160]} -->\n{inner[:max_inner_chars]}")
+            try:
+                extra_net.extend(_read_net_log(driver))
+            except Exception:
+                pass
+        finally:
+            try:
+                driver.switch_to.default_content()
+            except Exception:
+                pass
+    return "".join(extra_parts), extra_net
+
+
+_OPTION_TRIGGER_JS = r"""
+return (function(){
+  var out = [];
+  function add(sel){ if(sel && out.indexOf(sel)<0) out.push(sel); }
+  function sel(el){
+    try{
+      if(el.id) return el.tagName.toLowerCase()+'#'+CSS.escape(el.id);
+      var cls = (typeof el.className==='string') ? el.className : '';
+      var f = cls.trim().split(/\s+/).filter(function(c){return c.length>1;})[0];
+      if(f) return el.tagName.toLowerCase()+'.'+CSS.escape(f);
+    }catch(e){}
+    return el.tagName.toLowerCase();
+  }
+  function vis(e){ return e && e.offsetParent !== null; }
+  // 옵션과 무관한 UI(검색·공유·카테고리·멤버십·툴팁 등) 제외
+  var BLOCK = /(search|keyword|share|sns|login|join|cart|category|recent|member|tooltip|popover|interest|wish|coupon|banner|gnb|footer|header|view-ctrl|expand\b|more\b|notice|qna)/i;
+  // 옵션 트리거로 볼 만한 클래스/id 키워드 (정밀)
+  var OPT = /(option|variant|opt[-_]|색상|사이즈|옵션|sku|prdselect|goods-?opt)/i;
+  function tag(e){ return ((typeof e.className==='string'?e.className:'')+' '+(e.id||'')+' '+(e.getAttribute('name')||'')); }
+
+  // 1) select 드롭다운 (검색/정렬류 제외)
+  document.querySelectorAll('select').forEach(function(s){
+    if(!vis(s)) return;
+    if(BLOCK.test(tag(s))) return;
+    add(sel(s));
+  });
+  // 2) 옵션 선택 위젯 (combobox/listbox) — 검색 등 제외
+  document.querySelectorAll('[role=combobox],[role=listbox]').forEach(function(e){
+    if(!vis(e) || BLOCK.test(tag(e))) return;
+    add(sel(e));
+  });
+  // 3) 클래스/id 가 '옵션'류인 클릭 요소 (블록 키워드 제외)
+  var nodes = document.querySelectorAll('button,a,[role=button],li');
+  var cnt = 0;
+  for(var i=0;i<nodes.length && cnt<800 && out.length<10;i++){
+    var e = nodes[i];
+    if(!vis(e)) continue;
+    var t = tag(e);
+    if(OPT.test(t) && !BLOCK.test(t)){ add(sel(e)); cnt++; }
+  }
+  return out.slice(0, 10);
+})();
+"""
+
+
+def _detect_option_triggers(driver) -> list:
+    """클릭형 옵션 트리거 후보를 '클릭 없이' 탐지해 CSS 셀렉터 후보 목록 반환."""
+    try:
+        res = driver.execute_script(_OPTION_TRIGGER_JS)
+        return [s for s in (res or []) if isinstance(s, str)][:12]
+    except Exception:
+        return []
+
+
+def _finalize_collect(driver, html: str, title: str, final_url: str) -> dict:
+    """
+    수집 결과 dict를 일관되게 구성: net_log + 콘텐츠 iframe(상세·리뷰) 병합 + 옵션트리거 감지.
+    base collect 와 사이트별 collect(클릭 후) 모두 이걸 거쳐 동일 필드를 보장한다.
+    """
+    net_log = _read_net_log(driver)
+    try:
+        iframe_html, iframe_net = _capture_iframes(driver)
+        if iframe_html:
+            html = html + iframe_html
+        if iframe_net:
+            net_log = net_log + iframe_net
+    except Exception:
+        pass
+    return {
+        'html': html,
+        'page_title': title,
+        'final_url': final_url,
+        'network_log': net_log,
+        'option_triggers': _detect_option_triggers(driver),
+    }
+
+
+def _click_review_tab(driver) -> bool:
+    """
+    '상품후기/리뷰' 탭을 클릭해 리뷰 콘텐츠(별도 iframe/XHR) 로딩을 트리거.
+    Gmarket 등은 리뷰가 탭 클릭 시에만 로드되므로, 클릭 후 _capture_iframes/_read_net_log로 잡는다.
+    """
+    from selenium.webdriver.common.by import By
+    try:
+        els = driver.find_elements(
+            By.XPATH,
+            "//*[self::a or self::button or self::li or @role='tab']"
+            "[contains(text(),'후기') or contains(text(),'리뷰') or "
+            "contains(translate(text(),'REVIEW','review'),'review')]",
+        )
+        for el in els[:4]:
+            try:
+                if not el.is_displayed():
+                    continue
+                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                time.sleep(0.2)
+                driver.execute_script("arguments[0].click();", el)
+                time.sleep(1.3)
+                return True
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return False
+
+
+# ── 사이트 레시피(데이터) — 특수 collect_* 함수 대체 ────────────────────────────
+# 도메인별 옵션-펼치기 클릭 셀렉터 + 리뷰탭 클릭 여부. 코드(함수)가 아니라 데이터로 관리하며,
+# site_knowledge.collection.{option_clicks, review_tab}(에이전트 학습값)과 병합된다.
+_SITE_RECIPE_DEFAULTS = {
+    "gmarket.co.kr": {
+        "option_clicks": [
+            'select[name*="option"]', 'select[id*="option"]', 'select[class*="option"]',
+            '.option_wrap select', '#opt_select', '.item_option select',
+            'button[class*="option"]', '.option_list li', '.choice_option li',
+        ],
+        "review_tab": True,
+    },
+    "auction.co.kr": {"option_clicks": ['select[name*="option"]', 'button[class*="option"]'], "review_tab": True},
+    "oliveyoung.co.kr": {"option_clicks": ['button[class*="OptionSelector_btn-option"]'], "review_tab": False},
+    "musinsa.com": {"option_clicks": ['button[data-mds="IconButton"]:has(svg[data-mds="IcArrowDown"])'], "review_tab": False},
+}
+
+
+def _recipe_for(domain: str) -> dict:
+    for k, v in _SITE_RECIPE_DEFAULTS.items():
+        if k in domain:
+            return v
+    return {}
+
+
+def _apply_site_recipe(driver, domain: str) -> bool:
+    """
+    도메인 레시피(기본값 + site_knowledge 학습값)의 option_clicks/review_tab를 적용.
+    특수 collect_* 메서드를 대체하는 범용 엔진. 반환: DOM을 바꾼 동작이 있었는지.
+    """
+    from selenium.webdriver.common.by import By
+    base = _recipe_for(domain)
+    try:
+        coll = site_knowledge.get_collection(domain) or {}
+    except Exception:
+        coll = {}
+    clicks = list(base.get("option_clicks", []))
+    for s in (coll.get("option_clicks") or []):
+        if s not in clicks:
+            clicks.append(s)
+    review_tab = coll.get("review_tab", base.get("review_tab", False))
+
+    from selenium.webdriver.common.action_chains import ActionChains
+    changed = False
+    for sel in clicks[:14]:
+        try:
+            els = driver.find_elements(By.CSS_SELECTOR, sel)
+        except Exception:
+            continue
+        for el in els[:3]:
+            try:
+                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                time.sleep(0.12)
+                # React 핸들러 대응: 실제 클릭(ActionChains) 우선, 실패 시 JS 클릭 폴백
+                try:
+                    ActionChains(driver).move_to_element(el).click().perform()
+                except Exception:
+                    driver.execute_script("arguments[0].click();", el)
+                time.sleep(0.4)
+                changed = True
+            except Exception:
+                continue
+    if review_tab:
+        try:
+            if _click_review_tab(driver):
+                _lazy_scroll(driver, max_steps=4, pause=0.4)
+                changed = True
+        except Exception:
+            pass
+    return changed
 
 
 class _Slot:
@@ -488,13 +1071,8 @@ class _Slot:
         except Exception:
             time.sleep(3)
 
-        # 스크롤 시뮬레이션
-        try:
-            driver.execute_script("window.scrollTo(0, 300);")
-            time.sleep(0.5)
-            driver.execute_script("window.scrollTo(0, 0);")
-        except Exception:
-            pass
+        # 스크롤 시뮬레이션 — 깊은 단계별 스크롤로 지연로딩(갤러리·리뷰) 트리거
+        _lazy_scroll(driver)
 
         html = driver.page_source
         title = driver.title
@@ -530,17 +1108,45 @@ class _Slot:
         except Exception as e:
             logger.warning("[슬롯%d] 옵션 reveal 실패 (무시): %s", self.slot_id, e)
 
-        # fetch/XHR 로그 수집
-        import json as _j
-        net_log = []
+        # 사이트 레시피(옵션 클릭·리뷰탭) 적용 — 특수 collect_* 대체 (데이터 기반)
         try:
-            raw = driver.execute_script("return JSON.stringify((window._netLog||[]).slice(0,40));")
-            net_log = _j.loads(raw or '[]')
-            logger.info("[슬롯%d] 네트워크 로그 %d개 캡처", self.slot_id, len(net_log))
+            from urllib.parse import urlparse as _up2
+            if _apply_site_recipe(driver, _up2(url).netloc):
+                html = driver.page_source
+                logger.info("[슬롯%d] 사이트 레시피 적용 → HTML 재캡처", self.slot_id)
         except Exception as e:
-            logger.warning("[슬롯%d] 네트워크 로그 수집 실패: %s", self.slot_id, e)
+            logger.warning("[슬롯%d] 레시피 적용 실패 (무시): %s", self.slot_id, e)
 
-        return {'html': html, 'page_title': title, 'final_url': final_url, 'network_log': net_log}
+        # 결과 구성 (net_log + iframe 병합 + 옵션트리거) — 일원화
+        result = _finalize_collect(self.collector.driver, html, title, final_url)
+
+        # 연계(캐스케이드) 옵션 1차: depth>=2를 캡처 헤더로 서버 직접 fetch (stateless API면 성공)
+        try:
+            extra = _fetch_option_depths(result.get('network_log', []))
+            if extra:
+                result['network_log'] = (result.get('network_log') or []) + extra
+                logger.info("[슬롯%d] 연계옵션 deeper-depth %d개 fetch", self.slot_id, len(extra))
+        except Exception as e:
+            logger.warning("[슬롯%d] 연계옵션 fetch 실패 (무시): %s", self.slot_id, e)
+
+        # 연계옵션 2차: 여전히 2단계 값이 비면(stateful API) — API가 알려준 1단계 첫 값을
+        # UI에서 클릭해 앱이 depth=2를 직접 호출하게 만들고, 그 응답을 net_log에서 재수집/파싱.
+        try:
+            need, first_val = _cascade_first_value_and_need(result.get('network_log', []))
+            if need and first_val:
+                clicked = _trigger_cascade(self.collector.driver, first_val)
+                if clicked:
+                    time.sleep(1.2)
+                    result['network_log'] = _read_net_log(self.collector.driver)
+                    logger.info("[슬롯%d] 캐스케이드 트리거 '%s' 클릭 → net_log %d개 재수집",
+                                self.slot_id, clicked, len(result['network_log']))
+        except Exception as e:
+            logger.warning("[슬롯%d] 캐스케이드 트리거 실패 (무시): %s", self.slot_id, e)
+
+        logger.info("[슬롯%d] 네트워크 %d개 · 옵션트리거 %d개 · iframe병합=%s",
+                    self.slot_id, len(result['network_log']), len(result['option_triggers']),
+                    '<!-- IFRAME' in result['html'])
+        return result
 
     def collect(self, url: str) -> dict:
         """URL 수집. JS 네비게이션 1순위, 빈 결과면 warm-up 후 재시도."""
@@ -565,93 +1171,6 @@ class _Slot:
 
         return result
 
-    def collect_musinsa(self, url: str) -> dict:
-        result = self.collect(url)
-        try:
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.common.action_chains import ActionChains
-            driver = self.collector.driver
-            buttons = driver.find_elements(
-                By.CSS_SELECTOR,
-                'button[data-mds="IconButton"]:has(svg[data-mds="IcArrowDown"])',
-            )
-            clicked = 0
-            for btn in buttons:
-                try:
-                    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
-                    time.sleep(0.15)
-                    ActionChains(driver).move_to_element(btn).click().perform()
-                    time.sleep(0.5)
-                    clicked += 1
-                except Exception:
-                    pass
-            if clicked:
-                time.sleep(0.3)
-                result = {'html': driver.page_source, 'page_title': result['page_title'], 'final_url': result['final_url']}
-                logger.info("[무신사] 드랍다운 %d개 클릭 후 재수집", clicked)
-        except Exception as e:
-            logger.warning("[무신사] 드랍다운 클릭 실패: %s", e)
-        return result
-
-    def collect_gmarket(self, url: str) -> dict:
-        result = self.collect(url)
-        try:
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.common.action_chains import ActionChains
-            driver = self.collector.driver
-            # 지마켓 옵션 셀렉트박스 및 옵션 버튼 클릭
-            selectors = [
-                'select[name*="option"]', 'select[id*="option"]', 'select[class*="option"]',
-                '.option_wrap select', '#opt_select', '.item_option select',
-                'button[class*="option"]', '.option_list li', '.choice_option li',
-            ]
-            clicked = 0
-            for sel in selectors:
-                try:
-                    elements = driver.find_elements(By.CSS_SELECTOR, sel)
-                    for el in elements[:3]:
-                        try:
-                            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
-                            time.sleep(0.1)
-                            driver.execute_script("arguments[0].click();", el)
-                            time.sleep(0.25)
-                            clicked += 1
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-            if clicked:
-                time.sleep(0.3)
-                result = {'html': driver.page_source, 'page_title': result['page_title'], 'final_url': result['final_url']}
-                logger.info("[지마켓] 옵션 요소 %d개 클릭 후 재수집", clicked)
-        except Exception as e:
-            logger.warning("[지마켓] 옵션 클릭 실패: %s", e)
-        return result
-
-    def collect_oliveyoung(self, url: str) -> dict:
-        result = self.collect(url)
-        try:
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.common.action_chains import ActionChains
-            driver = self.collector.driver
-            buttons = driver.find_elements(By.CSS_SELECTOR, 'button[class*="OptionSelector_btn-option"]')
-            clicked = 0
-            for btn in buttons:
-                try:
-                    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
-                    time.sleep(0.15)
-                    ActionChains(driver).move_to_element(btn).click().perform()
-                    time.sleep(0.5)
-                    clicked += 1
-                except Exception:
-                    pass
-            if clicked:
-                time.sleep(0.3)
-                result = {'html': driver.page_source, 'page_title': result['page_title'], 'final_url': result['final_url']}
-                logger.info("[올리브영] 옵션 버튼 %d개 클릭 후 재수집", clicked)
-        except Exception as e:
-            logger.warning("[올리브영] 옵션 클릭 실패: %s", e)
-        return result
 
 
 # ── 네이버 슬롯 ──────────────────────────────────────────────────────────────
@@ -724,7 +1243,15 @@ class _NaverSlot:
         if not self._is_alive():
             logger.warning("[네이버슬롯] 드라이버 사망 → 재시작")
             self._restart()
-        result = self.collector.collect_product_page(url, save_screenshot=False)
+        result = self.collector.collect_product_page(url, save_screenshot=False) or {}
+
+        # 네이버 일시 에러페이지/짧은 응답(cold-start 등) → 1회 재시도
+        html = (result.get('html') or '') if isinstance(result, dict) else ''
+        head = html[:3000]
+        if len(html) < 15000 or ('시스템오류' in head) or ('에러페이지' in head):
+            logger.warning("[네이버슬롯] 에러/짧은 응답(%d자) → 1.5초 후 재시도", len(html))
+            time.sleep(1.5)
+            result = self.collector.collect_product_page(url, save_screenshot=False) or {}
 
         # 동적 옵션 API 호출이 완료될 시간을 줌 (Naver SPA 특성상 페이지 로드 후 XHR 발생)
         time.sleep(2)
@@ -836,6 +1363,7 @@ def collect_general():
             'page_title': page_title,
             'final_url': result.get('final_url', url),
             'network_log': [],
+            'option_triggers': result.get('option_triggers', []),
             'product_info': product_info,
             'success': True,
         })
@@ -846,16 +1374,14 @@ def collect_general():
         return _busy_response()
 
     try:
-        if 'musinsa.com' in url:
-            result = slot.collect_musinsa(url)
-        elif 'oliveyoung.co.kr' in url:
-            result = slot.collect_oliveyoung(url)
-        elif 'gmarket.co.kr' in url:
-            result = slot.collect_gmarket(url)
-        else:
-            result = slot.collect(url)
+        # 사이트별 분기 없음 — collect()가 _navigate_js에서 도메인 레시피(옵션클릭·리뷰탭)를 적용
+        result = slot.collect(url)
+        if not isinstance(result, dict):
+            logger.error("[일반] collect()가 dict 아님(%s) — 드라이버 재시작", type(result).__name__)
+            slot._restart()
+            return jsonify({'success': False, 'error': '수집 실패(빈 결과) — 재시도해 주세요.'}), 200
 
-        raw_len = len(result.get('html', ''))
+        raw_len = len(result.get('html', '') or '')
         html_out = result['html'] if raw else _strip_nonessential_tags(result['html'])
         logger.info("[일반] 완료: %d→%d 문자 (슬롯%d)", raw_len, len(html_out), slot.slot_id)
 
@@ -870,18 +1396,19 @@ def collect_general():
 
         # HTML 전용 파서로 상품 정보 선추출 (옵션/가격 정확도 향상)
         page_title = result.get('page_title', '')
-        product_info = _run_html_parser(result['html'], url, page_title)
+        product_info = _run_html_parser(result['html'], url, page_title, result.get('network_log', []))
 
         return jsonify({
             'html': html_out,
             'page_title': page_title,
             'final_url': result.get('final_url', url),
             'network_log': result.get('network_log', []),
+            'option_triggers': result.get('option_triggers', []),
             'product_info': product_info,
             'success': True,
         })
     except Exception as e:
-        logger.error("[일반] 실패 (슬롯%d): %s", slot.slot_id, e)
+        logger.error("[일반] 실패 (슬롯%d): %s", slot.slot_id, e, exc_info=True)
         return jsonify({'error': str(e), 'success': False}), 500
     finally:
         slot.release()
@@ -905,6 +1432,33 @@ _BLOCK_SIGNALS = [
     'automated access', '비정상적인 접근', '잠시 후 다시',
     'cloudflare', 'ddos-guard', 'challenge',
 ]
+
+
+@app.route('/extract/size', methods=['POST'])
+def extract_size():
+    """
+    무게·치수 추정 (관세 종량세·국제배송 세 변의 합 계산용).
+    단계: 작성된 값 파싱 → 제목/카테고리 무게 추정 → (allow_ocr 시) 이미지 OCR.
+
+    body: { title, category, specs(dict), text, images([url]), allow_ocr(bool, 기본 false) }
+    반환: { weight_g, width_cm, length_cm, height_cm, girth_sum_cm, longest_side_cm,
+            source, confidence, note }
+    """
+    data = request.get_json() or {}
+    try:
+        from shopping.size_estimator import estimate_size
+        result = estimate_size(
+            title=data.get('title', '') or '',
+            category=data.get('category', '') or '',
+            specs=data.get('specs') if isinstance(data.get('specs'), dict) else None,
+            text=data.get('text', '') or '',
+            images=data.get('images') if isinstance(data.get('images'), list) else None,
+            allow_ocr=bool(data.get('allow_ocr', False)),
+        )
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        logger.warning("[size] 추정 실패: %s", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/collect/simple', methods=['POST'])

@@ -1,0 +1,3 @@
+dm.order: {"order_number": "string", "price_dk_burden": "number", "status": "enum", "created_at": null, "options": "array/json"}
+dm.user_address: {"date_of_birth": "date", "country": "string", "is_default": "boolean"}
+dm.product: {"rating": null, "review_count": null, "images": "array/json", "url": "url"}

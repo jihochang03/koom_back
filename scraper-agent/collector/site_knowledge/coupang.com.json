@@ -2,13 +2,13 @@
   "collection": {
     "wait_for_selector": ".product-title",
     "network_patterns": [
-      "/next-api/products/btf?productId=",
-      "/next-api/products/quantity-info?productId=",
-      "/next-api/review?productId="
+      "/next-api/review?productId=",
+      "/next-api/products/quantity-info"
     ],
-    "notes": "쿠팡 SDP(상품 상세 페이지). Tailwind CSS(twc- 접두사) 사용. 상품 제목: h1.product-title span. 가격: .price-container .twc-text-[22px]. 원가: .price-container .twc-line-through. 옵션: .option-table-list__option. 브랜드: .brand-info .twc-font-bold. 카테고리: ul.breadcrumb li a. 별점/리뷰수는 meta[name=description]에서 정규식 추출이 가장 안정적. 상품 상세 이미지: .product-detail-content img. 필수표기정보: #itemBrief table."
+    "notes": "product_info에 title/price/options/main_image 포함. 평점·리뷰수는 /next-api/review API(rData.ratingSummaryTotal.ratingAverage/ratingCount). 배송비는 quantity-info API의 moduleData>detailPriceBundle>finalPrice>bestPriceInfo priceWithDeliveryFee-price 차이. 이미지는 coupangcdn.com/thumbnails/ 또는 coupangcdn.com/image/retail 경로만 허용(로고·아이콘 제외). delivery_date는 product_info.shipping_period 또는 .pdd-contents",
+    "access_method": "chrome"
   },
   "domain": "coupang.com",
   "created_at": "2026-05-29T11:58:35",
-  "updated_at": "2026-06-08T10:51:38"
+  "updated_at": "2026-06-26T17:05:18"
 }

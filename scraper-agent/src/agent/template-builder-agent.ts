@@ -285,6 +285,7 @@ async function toolCollectPage(
 
   // chrome / naver 모드: /collect/general (브라우저, raw=true로 스크립트 포함)
   let result: import("../core/local-collector").CollectResult | null = null;
+  let optionTriggers: string[] = [];
   try {
     const resp = await fetch(`${COLLECTOR_URL}/collect/general`, {
       method: "POST",
@@ -293,9 +294,10 @@ async function toolCollectPage(
       signal: AbortSignal.timeout(180_000),
     });
     if (resp.ok) {
-      const data = await resp.json() as { success: boolean; html?: string; page_title?: string; final_url?: string; network_log?: Array<{ url: string; body: string; ct: string }>; product_info?: unknown };
+      const data = await resp.json() as { success: boolean; html?: string; page_title?: string; final_url?: string; network_log?: Array<{ url: string; body: string; ct: string }>; option_triggers?: string[]; product_info?: unknown };
       if (data.success && data.html && data.html.length > 3_000) {
         result = { html: data.html, page_title: data.page_title ?? "", final_url: data.final_url ?? url, source_port: 18080, network_log: data.network_log ?? [], product_info: data.product_info as import("../core/local-collector").ParsedProductInfo | undefined };
+        optionTriggers = data.option_triggers ?? [];
       }
     }
   } catch {}
@@ -340,10 +342,16 @@ async function toolCollectPage(
     if (selectorHints.length >= 4) break;
   }
 
+  const iframeNote = html.includes("<!-- IFRAME ")
+    ? "\n▶ iframe 콘텐츠 병합됨 (상세·리뷰가 iframe 안에 있던 경우 — HTML 하단 <!-- IFRAME ... --> 이후 참고)"
+    : "";
+
   return [
     `수집 완료: HTML ${Math.round(html.length / 1024)}KB, 네트워크 ${netLen}개`,
     result.product_info ? `\n▶ HTML파서 선추출:\n${JSON.stringify(result.product_info, null, 2).slice(0, 1500)}` : "",
     selectorHints.length > 0 ? `\n▶ 옵션 관련 CSS 힌트: ${selectorHints.join(", ")}` : "",
+    optionTriggers.length > 0 ? `\n▶ 클릭형 옵션 트리거 후보(셀렉터): ${optionTriggers.join(", ")}\n   → 옵션이 비어 보이면 click_and_capture로 이 셀렉터를 클릭해 펼친 뒤 추출하고, 템플릿에는 /collect/click 호출로 templatize` : "",
+    iframeNote,
     netLen > 0 ? `\n▶ 네트워크 로그 (옵션/가격 우선):\n${netSummary}` : "",
   ].filter(Boolean).join("\n");
 }
@@ -359,13 +367,16 @@ function toolGrepHtml(
   let re: RegExp;
   try { re = new RegExp(pattern, "i"); } catch { return `[오류] 잘못된 정규식: ${pattern}`; }
 
+  // minified HTML은 한 줄이 수십 KB일 수 있어 줄당 길이를 제한 (컨텍스트 폭발 방지)
+  const LINE_CAP = 600;
+  const clip = (s: string) => (s.length > LINE_CAP ? s.slice(0, LINE_CAP) + "…" : s);
   const matches: string[] = [];
   for (let i = 0; i < lines.length && matches.length < max_results; i++) {
     if (re.test(lines[i])) {
       const start = Math.max(0, i - context_lines);
       const end   = Math.min(lines.length - 1, i + context_lines);
       matches.push(`--- 줄 ${i + 1} ---`);
-      matches.push(lines.slice(start, end + 1).join("\n"));
+      matches.push(lines.slice(start, end + 1).map(clip).join("\n"));
     }
   }
   return matches.length > 0
@@ -617,26 +628,38 @@ function buildSystemPrompt(category?: string | null, pageType?: string | null): 
 save_site_knowledge(domain, { access_method: "simple" | "chrome" | "naver", ... })
 \`\`\`
 
-## 워크플로우
-1. collect_page(url, mode="simple") — 우선 브라우저 없이 시도
-   - "[심플 차단]" 메시지 → collect_page(url, mode="chrome")으로 바로 재시도
-   - 네이버 계열 URL → collect_page(url, mode="naver") 바로 사용
-2. 수집된 HTML과 선추출 데이터 확인. 불명확하면 grep_html / inspect_network / get_html_section으로 추가 탐색
-3. 옵션이 클릭으로만 나타나는 경우 click_and_capture 사용
-4. Python 코드 작성 → run_code(code, url) 검증
-5. **run_code 결과 검증 — 아래 필드가 모두 실제 값인지 확인:**
-   - title: 비어있지 않은 문자열
-   - price_original 또는 price_discounted: None이 아닌 숫자
-   - options: 페이지에 옵션이 있었다면 비어있지 않은 배열
-   - shipping_fee_text: None이 아닌 문자열 (쇼핑 카테고리 필수)
-   → 하나라도 None/빈값이면 **해당 필드만 집중 수정 후 run_code 재실행** (탐색 툴 추가 호출 없이)
-   → 모두 실제 값이면 save_template() + save_site_knowledge(access_method 포함) 저장
-   run_code Python 에러 시 오류 원인 수정 후 재실행 (탐색 툴 추가 호출 금지)
+## 워크플로우 — ★ 절대 규칙: "저장 먼저(SAVE-FIRST), 보강은 나중"
+당신의 예산은 약 18스텝. **저장(save_template) 없이 끝나면 무조건 실패**입니다. 과탐색이 가장 흔한 실패 원인.
 
-## 탐색 결정 기준
-- collect_page에 선추출 결과가 충분 → 탐색 없이 바로 코드 작성
-- 네트워크에 관련 API가 보임 → inspect_network 1회로 본문 확인
-- HTML에서 구조가 불분명할 때만 grep_html 1회
+**절대 규칙 (어기지 말 것):**
+- **탐색(grep/section/inspect)은 첫 run_code 전까지 최대 3회.** 3회를 쓰면 무조건 코드를 쓰고 run_code.
+- run_code에서 [A](title·가격·shipping_fee_text)가 나오면 **바로 그 다음 스텝에서 save_template + save_site_knowledge** (= 핵심부터 확보). 보강은 그 뒤에.
+- **title 검증**: title에 판매자명·카테고리·사이트명이 들어가면 잘못된 것 → 상품명 셀렉터를 고쳐라(예: og:title, JSON-LD name, h1 상품명). 판매자명이 title이 되지 않게 주의.
+- 같은 필드를 여러 번 grep 금지. 한 필드 막히면 비워두고 진행.
+
+1. collect_page(url, mode="simple") — 우선 브라우저 없이 시도
+   - "[심플 차단]" → collect_page(url, mode="chrome") 재시도 · 네이버 계열 → mode="naver"
+2. **선추출(product_info)** 먼저 확인. 핵심이 있으면 탐색 없이 바로 3번. (탐색은 위 절대규칙대로 최대 3회)
+3. **Python 코드 작성 → run_code** (가진 정보로 일단. 완벽하지 않아도 됨)
+4. **[A] 나오면 즉시 save_template + save_site_knowledge** (보강 전에 먼저 저장!)
+5. 저장 후 남는 예산으로만 [B] 보강: 비어 있는 [B] 필드 **하나당 grep/section/inspect_network 1회** → 코드 수정 → run_code → **다시 save_template로 갱신**.
+   - 옵션이 클릭으로만 나타나면 click_and_capture 사용.
+   - 예산이 부족하면 [B] 일부는 비운 채 저장해도 된다. **저장 못 하는 것보다 핵심만이라도 저장이 낫다.**
+
+## 추출 목표 — "보이는 건 다 뽑는다" (단, 4번 저장 이후 보강 단계에서)
+[A] 항상 필수 (없으면 실패): title / (price_original 또는 price_discounted) / shipping_fee_text
+[B] 페이지에 보이면 채운다 (저장 후 보강, 예산 내에서):
+- options: 옵션 선택 UI(드롭다운·색상·사이즈·수량)가 있으면 **모든 그룹·값**. JSON-LD로 가격을 얻더라도 **옵션은 HTML/네트워크에서 별도 추출**(JSON-LD엔 옵션이 없는 경우가 많음).
+- images: **og:image 1장에서 끝내지 말 것** — 썸네일·갤러리·상세 이미지까지 최대 10장. 중복 제거, 썸네일은 고해상도로 보정, // → https: 보정.
+- brand / rating(0~5 실수)·review_count(정수) / delivery_date(도착·발송 안내) / seller / specifications(필수표기정보 표 dict)
+- 선추출(product_info)에 값이 있으면(shipping_period·brand·rating 등) **그대로 사용**하고 직접 파싱과 병합.
+- ★ **HTML/product_info에 없으면 = 네트워크 API에서 온 것.** inspect_network로 해당 API 응답을 찾고, **템플릿 코드에서 \`data["network_log"]\`(=[{url,body,ct}])를 url 패턴으로 찾아 json.loads(body)로 파싱**한다. (리뷰·평점·이미지 갤러리·옵션·재고가 대표적). 브라우저가 이미 호출·캡처했으니 별도 인증 불필요 — 이 방식까지 **반드시 템플릿화**할 것.
+
+## 탐색 결정 기준 (엄격히 — 과탐색이 가장 흔한 실패 원인)
+- 선추출(product_info)에 핵심이 있으면 → **탐색 0회**, 바로 코드 작성
+- 네트워크 API가 보이면 → inspect_network 1회
+- 구조 불분명 → grep_html은 **필드당 1회**, 같은 목적으로 반복 금지
+- **코드를 한 번도 안 썼는데 탐색 4회를 넘기지 말 것** — 즉시 run_code로 전환
 ${cat.templateHints}
 
 ## 생성할 Python 코드 규칙
@@ -659,9 +682,11 @@ html = resp.text
 **chrome / naver** (access_method="chrome" or "naver"):
 \`\`\`python
 import requests
-data = requests.post("http://localhost:18080/collect/general", json={"url": url}, timeout=60).json()
+data = requests.post("http://localhost:18080/collect/general", json={"url": url}, timeout=90).json()
 html = data.get("html", "")
+net_log = data.get("network_log", [])   # 브라우저가 캡처한 fetch/XHR 응답 [{url, body, ct}]
 \`\`\`
+- 수집 서버는 페이지를 **끝까지 스크롤**해 지연로딩(갤러리·리뷰·평점)을 트리거하고, 그때 발생한 API 응답을 \`network_log\`로 함께 돌려준다. **HTML에 없는 데이터는 거의 다 여기 있다.**
 
 - 클릭 필요 시: POST http://localhost:18080/collect/click {"url": url, "selectors": [...]}
 - 성공한 access_method에 맞는 패턴을 코드에 사용할 것
@@ -754,8 +779,15 @@ export async function runTemplateBuilder(
   if (isFirstTurn) {
     const existing = loadExistingTemplateForMessages(messages);
     if (existing) {
-      onStatus?.(`→ 기존 템플릿 발견: ${existing.filename} — 검증 후 필요한 경우만 수정합니다`);
-      const inject = `\n\n[기존 템플릿 (${existing.filename})]:\n\`\`\`python\n${existing.code}\n\`\`\`\n먼저 이 코드를 run_code로 검증하고, 문제가 없으면 그대로 유지하세요. 문제가 있을 때만 수정 후 save_template으로 저장하세요.`;
+      onStatus?.(`→ 기존 템플릿 발견: ${existing.filename} — 기존 동작 보존 + 누락된 신규 필드 추가(업그레이드)`);
+      const inject = `\n\n[기존 템플릿 (${existing.filename})]:\n\`\`\`python\n${existing.code}\n\`\`\`\n` +
+        `이 템플릿을 **증분 업그레이드**하세요 (처음부터 다시 만들지 말 것):\n` +
+        `1. 먼저 run_code로 실행해 현재 출력에서 **비어 있거나 누락된 출력 키**를 확인합니다.\n` +
+        `2. 위 시스템 지침의 [A]·[B] 필드 중 빠진 것을 **기존 코드에 추가**합니다. 특히 최근 추가된: ` +
+        `size(/extract/size 호출), delivery_date, 이미지 갤러리(여러 장), brand·rating·review_count, specifications, ` +
+        `그리고 HTML에 없으면 network_log API 파싱·iframe 콘텐츠. **이미 잘 나오는 필드의 셀렉터·로직은 그대로 보존**합니다.\n` +
+        `3. 수정 후 run_code로 재검증 → save_template로 저장(+ 클릭형 옵션 발견 시 save_site_knowledge의 extra_clicks).\n` +
+        `핵심: 기존 동작 유지 + 새 필드만 더하는 증분 업그레이드. 이미 모든 필드가 채워져 있으면 그대로 두고 저장만.`;
       const first = messages[0];
       const firstText = typeof first.content === "string" ? first.content : (first.content as Array<{type:string;text?:string}>).filter(b=>b.type==="text").map(b=>b.text??"").join("");
       messages = [{ role: "user", content: firstText + inject }];
@@ -763,7 +795,8 @@ export async function runTemplateBuilder(
   }
 
   let iterations = 0;
-  const maxIter = 12;
+  const maxIter = 18;
+  let savedTemplate = false;
 
   while (iterations++ < maxIter) {
     const response = await client().messages.create({
@@ -843,6 +876,7 @@ export async function runTemplateBuilder(
               saveInput.page_type = pageType as "detail" | "list" | "both";
             }
             result = toolSaveTemplate(saveInput);
+            savedTemplate = true;
             break;
           }
           case "click_and_capture":
@@ -864,10 +898,26 @@ export async function runTemplateBuilder(
       }
 
       onToolResult?.(tu.name, result.slice(0, 200));
-      toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: result });
+      // 컨텍스트 폭발 방지: 단일 tool_result 상한 (iframe 병합/minified HTML grep 등이 거대해질 수 있음)
+      const MAX_RESULT_CHARS = 16_000;
+      const capped = result.length > MAX_RESULT_CHARS
+        ? result.slice(0, MAX_RESULT_CHARS) + `\n…(결과 ${result.length}자 중 앞 ${MAX_RESULT_CHARS}자만 표시 — 더 좁은 패턴/셀렉터로 재시도)`
+        : result;
+      toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: capped });
     }
 
     messages = [...messages, { role: "user", content: toolResults }];
+
+    // 수렴 안전망: 예산 임박했는데 아직 저장 안 했으면 "지금 저장" 강제 넛지
+    if (!savedTemplate && iterations >= maxIter - 3) {
+      messages = [...messages, {
+        role: "user",
+        content:
+          "⏰ 남은 스텝이 거의 없습니다. 추가 탐색을 멈추고, 지금까지 확인한 정보만으로 " +
+          "scrape() 코드를 완성해 run_code로 한 번 검증한 뒤 **즉시 save_template + save_site_knowledge로 저장**하세요. " +
+          "title·가격이 비면 og:title / JSON-LD / 메타태그로라도 채우고, 나머지는 비워둔 채 저장해도 됩니다.",
+      }];
+    }
   }
 
   onDone?.(messages);

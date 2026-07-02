@@ -70,6 +70,33 @@ Base URL: `/api/orders/`
 
 ---
 
+## GET `/api/orders/{order_number}/`
+
+주문 상세. `OrderSerializer` 필드에 더해 **`cancel_eligibility`** 객체를 포함한다 — 프론트가 "취소" 버튼 노출을 제어하는 데 사용한다.
+
+| `cancel_eligibility` 필드 | 타입 | 설명 |
+|------|------|------|
+| `can_cancel_change_of_mind` | boolean | 단순변심 취소 가능 여부 |
+| `current_stage` | string | 현재 진행 단계 key (또는 터미널 status) |
+| `cutoff_stage` | string | 컷오프 단계 (`preparing_dispatch`) |
+| `reason` | string | 불가 사유 (가능하면 빈 문자열) |
+
+> 단순변심 취소는 **FastBox 인계(`preparing_dispatch`) 이후 차단**된다. 하자·오배송 등 귀책 사유는 단계와 무관하게 환불 요청으로 접수 가능. 정책 상세는 `cs_api.md`의 "단순변심 취소 컷오프" 참고. 판정 로직: `apps/orders/policy.py`.
+
+```json
+{
+  "order_number": "ORD-...", "status": "inspection", "...": "...",
+  "cancel_eligibility": {
+    "can_cancel_change_of_mind": true,
+    "current_stage": "inspection_in_progress",
+    "cutoff_stage": "preparing_dispatch",
+    "reason": ""
+  }
+}
+```
+
+---
+
 ## PATCH `/api/orders/{order_number}/status/`
 
 ### Request Body

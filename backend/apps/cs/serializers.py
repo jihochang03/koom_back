@@ -35,23 +35,30 @@ class InquiryReplySerializer(serializers.Serializer):
 
 
 class CancelRequestSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    status_display      = serializers.CharField(source='get_status_display', read_only=True)
+    reason_type_display = serializers.CharField(source='get_reason_type_display', read_only=True)
 
     class Meta:
         model = CancelRequest
         fields = [
             'id', 'order_number', 'customer_id', 'reason',
+            'reason_type', 'reason_type_display',
             'status', 'status_display', 'shipping_fee_burden',
             'admin_notes', 'processed_at', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'status', 'shipping_fee_burden', 'admin_notes',
-                            'processed_at', 'created_at', 'updated_at', 'status_display']
+                            'processed_at', 'created_at', 'updated_at',
+                            'status_display', 'reason_type_display']
 
 
 class CancelRequestCreateSerializer(serializers.Serializer):
     customer_id  = serializers.CharField(max_length=255)
     order_number = serializers.CharField(max_length=50)
     reason       = serializers.CharField()
+    reason_type  = serializers.ChoiceField(
+        choices=['change_of_mind', 'defect', 'mis_ship', 'inspection', 'other'],
+        default='change_of_mind',
+    )
 
 
 class CancelRequestAdminSerializer(serializers.Serializer):
@@ -61,24 +68,31 @@ class CancelRequestAdminSerializer(serializers.Serializer):
 
 
 class RefundRequestSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    status_display      = serializers.CharField(source='get_status_display', read_only=True)
+    reason_type_display = serializers.CharField(source='get_reason_type_display', read_only=True)
 
     class Meta:
         model = RefundRequest
         fields = [
             'id', 'order_number', 'customer_id', 'reason',
+            'reason_type', 'reason_type_display',
             'requested_amount', 'approved_amount',
             'status', 'status_display', 'admin_notes',
             'processed_at', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'status', 'approved_amount', 'admin_notes',
-                            'processed_at', 'created_at', 'updated_at', 'status_display']
+                            'processed_at', 'created_at', 'updated_at',
+                            'status_display', 'reason_type_display']
 
 
 class RefundRequestCreateSerializer(serializers.Serializer):
     customer_id      = serializers.CharField(max_length=255)
     order_number     = serializers.CharField(max_length=50)
     reason           = serializers.CharField()
+    reason_type      = serializers.ChoiceField(
+        choices=['change_of_mind', 'defect', 'mis_ship', 'inspection', 'other'],
+        default='change_of_mind',
+    )
     requested_amount = serializers.FloatField(min_value=0)
 
 

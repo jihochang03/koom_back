@@ -1,0 +1,12 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "requests.get으로 직접 수집 가능. brazeProperty JSON (var brazeProperty = {...};)에서 상품명/가격/평점/배송비/delivery_expect_date 추출. productPrdInfo JSON 보조. 옵션은 available_values JSON에 있으나 simple 모드에서 없을 수 있음. 스펙은 /products/spec/provision/{id} API. 이미지는 cdn.011st.com 패턴으로 파싱.",
+    "network_patterns": [
+      "products/spec/provision/"
+    ]
+  },
+  "domain": "11st.co.kr",
+  "created_at": "2026-06-26T10:26:33",
+  "updated_at": "2026-06-26T15:10:00"
+}

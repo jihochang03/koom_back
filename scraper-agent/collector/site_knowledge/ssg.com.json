@@ -1,0 +1,9 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "SSG.COM 상품상세 - requests.get으로 직접 수집 가능. 가격: .cdtl_new_price em.ssg_price(할인가) / .cdtl_old_price em.ssg_price(원가). 옵션: .cdtl_opt_group select. 이미지: .cdtl_pager_lst img.zoom_thumb에서 _i{n}_1200.jpg로 변환. 배송비: .cdtl_delivery_fee. 재고: JS soldOut:'Y'/'N' 변수 파싱. 평점: em.cdtl_grade_total, 리뷰수: .cdtl_grade_num .num"
+  },
+  "domain": "ssg.com",
+  "created_at": "2026-06-26T10:29:21",
+  "updated_at": "2026-06-26T11:23:43"
+}

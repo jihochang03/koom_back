@@ -226,8 +226,11 @@ export interface SizeInfo {
   width_cm: number | null;
   length_cm: number | null;
   height_cm: number | null;
-  source: "text" | "image_ocr" | "none";
-  confidence: "high" | "medium" | "low";
+  girth_sum_cm?: number | null;     // 세 변의 합 (국제배송 부피 기준)
+  longest_side_cm?: number | null;
+  source: "text" | "image_ocr" | "none" | "written" | "title_guess" | "mixed";
+  confidence: "high" | "medium" | "low" | "HIGH" | "MEDIUM" | "LOW";
+  note?: string;
 }
 
 export interface ProductData {
@@ -240,6 +243,7 @@ export interface ProductData {
   availability?: "in_stock" | "out_of_stock" | "unknown";
   shipping_fee?: number | null;
   shipping_fee_text?: string | null;
+  delivery_date?: string | null;
   rating?: number | null;
   review_count?: number | null;
   seller?: string | null;

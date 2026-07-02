@@ -141,6 +141,36 @@ CS가 직접 대리구매할 주문 목록. 원본 URL·옵션·예상가를 포
 
 ---
 
+## 단순변심 취소 컷오프 (FastBox 인계 = `preparing_dispatch`)
+
+`reason_type == 'change_of_mind'`(단순변심) 인 취소·환불 요청은 주문이 **FastBox 인계(`preparing_dispatch`, FB송장 채번) 단계 이후이면 접수 자체가 차단**된다(`409`). 이 컷오프가 있어야 반품 경로가 항상 **2단계 이내(DK물류센터 → 판매자)** 로 유지된다. 컷오프 이후 단순변심을 허용하면 `FastBox 수거 → DK물류센터 → 판매자`(3단계)가 되어 CS 부담이 커지므로 막는다.
+
+- 하자/오배송/검수이슈 등 **DK 귀책 사유(`reason_type != change_of_mind`)는 단계와 무관하게 항상 접수 가능**하다.
+- 진행 단계 판정은 `OrderStatusLog` 최대 단계와 `Order.status` 매핑 중 더 진행된 값을 사용한다 (로직: `apps/orders/policy.py`).
+- 프론트는 `GET /api/orders/{order_number}/`의 `cancel_eligibility` 로 취소 버튼 노출을 제어한다.
+
+**`reason_type` 허용값** (취소·환불 공통)
+
+| 값 | 설명 | 컷오프 적용 |
+|----|------|------------|
+| `change_of_mind` | 단순변심 (기본값) | ✅ `preparing_dispatch` 이후 차단 |
+| `defect` | 하자/불량 | ❌ 항상 허용 |
+| `mis_ship` | 오배송 | ❌ 항상 허용 |
+| `inspection` | 검수이슈 | ❌ 항상 허용 |
+| `other` | 기타 | ❌ 항상 허용 |
+
+차단 시 응답 예:
+
+```json
+{
+  "error": "FastBox 인계(출고 준비) 이후에는 단순변심 취소가 불가합니다. 하자·오배송 등 귀책 사유는 환불 요청으로 접수해 주세요.",
+  "current_stage": "preparing_dispatch",
+  "cutoff_stage": "preparing_dispatch"
+}
+```
+
+---
+
 ## POST `/api/cs/cancel/`
 
 ### Request Body
@@ -150,14 +180,13 @@ CS가 직접 대리구매할 주문 목록. 원본 URL·옵션·예상가를 포
 | `customer_id` | string | ✅ | 고객 식별자 |
 | `order_number` | string | ✅ | 주문번호 |
 | `reason` | string | ✅ | 취소 사유 |
+| `reason_type` | string | ❌ | 사유 유형 (기본 `change_of_mind`). 위 허용값 참고 |
 
-**취소 가능 여부 (주문 상태 기준)**
+**에러 응답**
 
-| 단계 | 취소 가능 여부 |
-|------|--------------|
-| `pending` | 취소 가능 |
-| `paid` / `purchasing` | 조건부 취소 (배송비 부담 가능) |
-| `shipping_intl` 이후 | 취소 불가 |
+| 상태 | 조건 |
+|------|------|
+| 409 | 이미 취소 요청 존재 / **단순변심인데 FastBox 인계 이후** |
 
 ---
 
@@ -178,6 +207,7 @@ CS가 직접 대리구매할 주문 목록. 원본 URL·옵션·예상가를 포
 | `customer_id` | string | ✅ | 고객 식별자 |
 | `order_number` | string | ✅ | 주문번호 |
 | `reason` | string | ✅ | 환불 사유 |
+| `reason_type` | string | ❌ | 사유 유형 (기본 `change_of_mind`). `change_of_mind`는 FastBox 인계 이후 `409` 차단 |
 | `requested_amount` | float | ✅ | 환불 요청 금액 |
 
 ---
@@ -214,6 +244,7 @@ CS가 직접 대리구매할 주문 목록. 원본 URL·옵션·예상가를 포
 | `order_number` | CharField(50) | 주문번호 (unique) |
 | `customer_id` | CharField(255) | 고객 식별자 |
 | `reason` | TextField | 취소 사유 |
+| `reason_type` | CharField(20) | 사유 유형 `change_of_mind`/`defect`/`mis_ship`/`inspection`/`other` (컷오프 판정 기준) |
 | `status` | CharField(20) | 상태 |
 | `shipping_fee_burden` | BooleanField | 고객 배송비 부담 여부 |
 | `admin_notes` | TextField | 어드민 메모 |
@@ -226,6 +257,7 @@ CS가 직접 대리구매할 주문 목록. 원본 URL·옵션·예상가를 포
 | `order_number` | CharField(50) | 주문번호 (unique) |
 | `customer_id` | CharField(255) | 고객 식별자 |
 | `reason` | TextField | 환불 사유 |
+| `reason_type` | CharField(20) | 사유 유형 `change_of_mind`/`defect`/`mis_ship`/`inspection`/`other` (컷오프 판정 기준) |
 | `requested_amount` | FloatField | 요청 금액 |
 | `approved_amount` | FloatField\|null | 승인 금액 |
 | `status` | CharField(20) | 상태 |

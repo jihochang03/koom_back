@@ -86,7 +86,7 @@
 
 <!-- ================= 고객 ================= -->
 <section id="cust">
-  <h2><span class="pill w-c">고객 앱</span> S · 22 화면</h2>
+  <h2><span class="pill w-c">고객 앱</span> S · 23 화면</h2>
   <div class="grid">
 
     <!-- S-01 -->
@@ -295,8 +295,25 @@
           <div class="f"><span class="ko">결제 상태</span><code class="v-disp">PGTransaction.auth_status</code></div>
           <div class="f"><span class="ko">국제 송장번호 / 지연 여부</span><code class="v-disp">fb_invoice_no / delay_type</code></div>
         </div>
-        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">문의(S-11) · 취소(S-12) · 환불(S-13) · 세관 스냅샷(P-01)</span></div></div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">배송 추적(S-10b) · 문의(S-11) · 취소(S-12) · 환불(S-13) · 세관 스냅샷(P-01)</span></div></div>
         <div class="api"><span class="m">GET</span> /orders/groups/{group_number}/ · /{order}/status-log/ · /{order}/pg/</div>
+      </div>
+    </div>
+
+    <!-- S-10b -->
+    <div class="screen"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cust)">S-10b</span><span class="nm">배송 추적 타임라인</span><span class="who w-c">고객</span></div>
+      <div class="body">
+        <div class="purpose">5단계 진행 바와 시간순 이벤트 로그로 해외직구 물류 진행 상황을 본다(통관·국내배송 포함).</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 진행 바(5단계)</div>
+          <div class="f"><span class="ko">상품발송→국제운송→통관→국내배송→배송완료</span><code class="v-disp">stages[].status</code></div>
+          <div class="f"><span class="ko">현재 단계</span><code class="v-disp">current_stage / current_stage_index</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — 이벤트 로그·배송정보</div>
+          <div class="f"><span class="ko">날짜별 이벤트(X-Ray·통관완료·물류센터·배송완료)</span><code class="v-disp">events_by_date[].items</code></div>
+          <div class="f"><span class="ko">배송완료 시각 / 배송 지역</span><code class="v-disp">delivery.delivered_at / region</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>비고</div><div class="f"><span class="ko">이벤트는 추적 동기화·적재(LOG-08)가 <b>5단계 자동 분류</b>, 화면은 읽기 전용</span></div></div>
+        <div class="api"><span class="m">GET</span> /logistics/{order}/timeline/</div>
       </div>
     </div>
 
@@ -411,7 +428,7 @@
 
 <!-- ================= CS ================= -->
 <section id="cs">
-  <h2><span class="pill w-s">CS 콘솔</span> C · 5 화면</h2>
+  <h2><span class="pill w-s">CS 콘솔</span> C · 6 화면</h2>
   <div class="grid">
 
     <!-- C-01 -->
@@ -471,6 +488,24 @@
           <div class="f"><span class="ko">등록 → 송장(<code class="inl">fb_invoice_no</code>)·출고 준비 · 배송지시 → 주문 <b>국제배송 단계</b> 전이</span></div>
         </div>
         <div class="api"><span class="m">POST</span> /logistics/{order}/dhub/register/ · <span class="m">POST</span> /logistics/dhub/instruct/</div>
+      </div>
+    </div>
+
+    <!-- C-06 -->
+    <div class="screen star"><div class="bar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="id" style="color:var(--cs)">C-06</span><span class="nm">HS코드 통관 분류 검수 ★</span><span class="who w-s">CS</span></div>
+      <div class="body">
+        <div class="purpose">fastbox 등록 전, AI가 추천한 HS코드·통관 카테고리를 근거(사유)·대안과 함께 확인하고 확정·수정한다.</div>
+        <div class="sec"><div class="sechead sh-disp"><span class="d" style="background:var(--disp)"></span>표시 — AI 추천·대안</div>
+          <div class="f"><span class="ko">추천 HS코드·품명·분류경로</span><code class="v-disp">selected.hs_code / matched_item / full_path</code></div>
+          <div class="f"><span class="ko">선정 사유</span><code class="v-disp">selected.reason</code></div>
+          <div class="f"><span class="ko">채택 여지 있는 다른 분류</span><code class="v-disp">alternatives[]</code></div>
+        </div>
+        <div class="sec"><div class="sechead sh-inp"><span class="d" style="background:var(--inp)"></span>입력 — 확정·피드백</div>
+          <div class="f"><span class="ko">확정 HS코드 / 통관 카테고리</span><code class="v-inp">final_hs_code / final_category</code></div>
+          <div class="f"><span class="ko">확정 방식 / 검수 피드백</span><code class="v-inp">decision_source / inspector_note</code></div>
+        </div>
+        <div class="sec act-list"><div class="sechead sh-act"><span class="d" style="background:var(--act)"></span>동작</div><div class="f"><span class="ko">추천 확정 / 대안 선택 / 직접 수정 → 확정값이 <b>fastbox 등록(C-03)</b>에 자동 주입</span></div></div>
+        <div class="api"><span class="m">POST</span> /tariff/classify/ · <span class="m">GET/POST</span> /tariff/products/{id}/classification/</div>
       </div>
     </div>
 

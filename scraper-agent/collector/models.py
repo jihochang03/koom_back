@@ -38,10 +38,17 @@ class ProductInfo(BaseModel):
     main_image_url: Optional[str] = Field(None, description="메인 상품 이미지 URL")
     shipping_period: Optional[str] = Field(None, description="배송기간 (예: '1-2일', '당일배송')")
     shipping_fee: Optional[float] = Field(None, description="배송비 (KRW). 0 = 무료배송, null = 알 수 없음")
+    shipping_fee_text: Optional[str] = Field(None, description="배송비 표시 텍스트 (예: '무료배송', '2,500원 (2만원 이상 무료)')")
     product_options: list[ProductOption] = Field(default_factory=list, description="상품 옵션 목록 (타입별로 구분)")
     product_weight: Optional[str] = Field(None, description="상품 무게")
     currency: str = Field(default="KRW", description="통화")
     hs_code: Optional[str] = Field(None, description="HS 코드 (4자리, 관세 분류용)")
+
+    # ── 범용 구조화 데이터(JSON-LD/OG/microdata)로 모든 사이트 공통 추출 ──────
+    brand: Optional[str] = Field(None, description="브랜드/제조사")
+    rating: Optional[float] = Field(None, description="평균 별점 (0~5)")
+    review_count: Optional[int] = Field(None, description="리뷰 수")
+    images: list[str] = Field(default_factory=list, description="상품 이미지 URL 목록")
 
     # ── 포장 치수 추정 (shipping calculator 연동용) ──────────────────────────
     # Claude가 상품 제목+무게+hs_code 기반으로 포장 후 예상 치수를 추정.

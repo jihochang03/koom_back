@@ -1,0 +1,18 @@
+{
+  "collection": {
+    "access_method": "chrome",
+    "network_patterns": [
+      "/api/v3/goods/{id}/basic/",
+      "/api/v2/goods/{id}/discounts/",
+      "/api/v2/goods/{id}/options/?depth=1",
+      "/api/v2/goods/{id}/options/brief/",
+      "/api/v2/goods/{id}/review_summary/",
+      "/api/v3/goods/{id}/information/",
+      "/webview/goods/{id}/reviews/summary/"
+    ],
+    "notes": "에이블리 SPA, chrome 필수. API: /api/v3/goods/{id}/basic (v3), /api/v2/goods/{id}/discounts, /options/?depth=1, /options/brief, /review_summary, /information. 이미지: cover_images 1장 + product_info 선추출 swiper. 배지·딜리버리 이미지는 base64 경로 디코딩으로 필터링. 썸네일 프리셋 GOODS_DETAIL로 교체. 배송비 기본 무료배송. 평점=positive_percent/20."
+  },
+  "domain": "m.a-bly.com",
+  "created_at": "2026-06-28T12:57:47",
+  "updated_at": "2026-06-28T13:50:28"
+}

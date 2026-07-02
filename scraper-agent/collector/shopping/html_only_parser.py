@@ -54,18 +54,288 @@ def _extract_meta(soup) -> dict:
     return meta
 
 
-def _extract_jsonld_product(soup) -> dict:
-    """첫 번째 Product/Offer JSON-LD 객체 반환 (없으면 {})."""
-    for script in soup.find_all("script", type="application/ld+json"):
+def _iter_jsonld_objects(soup):
+    """모든 JSON-LD 객체를 순회 (@graph·리스트·중첩 평탄화)."""
+    for script in soup.find_all("script", type=lambda t: t and "ld+json" in t.lower()):
+        raw = script.string or script.get_text() or ""
+        if not raw.strip():
+            continue
         try:
-            data = json.loads(script.string or "")
-            items = data if isinstance(data, list) else [data]
-            for item in items:
-                if isinstance(item, dict) and item.get("@type") in ("Product", "Offer"):
-                    return item
+            data = json.loads(raw)
         except Exception:
-            pass
+            continue
+        stack = [data]
+        while stack:
+            cur = stack.pop()
+            if isinstance(cur, list):
+                stack.extend(cur)
+            elif isinstance(cur, dict):
+                g = cur.get("@graph")
+                if isinstance(g, list):
+                    stack.extend(g)
+                yield cur
+
+
+def _jsonld_type_is(item: dict, *types) -> bool:
+    t = item.get("@type")
+    if isinstance(t, list):
+        return any(x in types for x in t)
+    return t in types
+
+
+def _extract_jsonld_product(soup) -> dict:
+    """Product/Offer JSON-LD 객체 반환 (@graph·@type 리스트 대응, 없으면 {})."""
+    for item in _iter_jsonld_objects(soup):
+        if isinstance(item, dict) and _jsonld_type_is(item, "Product", "IndividualProduct", "Offer"):
+            return item
     return {}
+
+
+def _universal_structured(soup) -> dict:
+    """
+    JSON-LD(schema.org Product) + OpenGraph + microdata에서 사이트 무관 공통 필드 추출.
+    모든 사이트에 1순위로 적용해 site 파서가 못 채운 칸(특히 평점·리뷰·브랜드·이미지)을 메운다.
+    """
+    out = {
+        "title": None, "original_price": None, "discounted_price": None,
+        "brand": None, "rating": None, "review_count": None,
+        "images": [], "main_image_url": None, "product_weight": None,
+    }
+    meta = _extract_meta(soup)
+    prod = _extract_jsonld_product(soup)
+
+    # ── JSON-LD ──
+    if prod:
+        out["title"] = prod.get("name")
+        offers = prod.get("offers") or {}
+        if isinstance(offers, list):
+            offers = offers[0] if offers else {}
+        if isinstance(offers, dict):
+            out["discounted_price"] = _to_num(offers.get("price") or offers.get("lowPrice"))
+            out["original_price"] = _to_num(offers.get("highPrice"))
+        brand = prod.get("brand")
+        if isinstance(brand, dict):
+            brand = brand.get("name")
+        out["brand"] = brand if isinstance(brand, str) else None
+        agg = prod.get("aggregateRating") or {}
+        if isinstance(agg, dict):
+            out["rating"] = _to_num(agg.get("ratingValue"))
+            rc = agg.get("reviewCount") or agg.get("ratingCount")
+            out["review_count"] = int(_to_num(rc)) if _to_num(rc) is not None else None
+        img = prod.get("image")
+        imgs: list = []
+        if isinstance(img, list):
+            imgs = [x.get("url") if isinstance(x, dict) else x for x in img]
+        elif isinstance(img, dict):
+            imgs = [img.get("url")]
+        elif img:
+            imgs = [img]
+        out["images"] = [str(i) for i in imgs if i]
+        w = prod.get("weight")
+        if isinstance(w, dict):
+            w = w.get("value")
+        if w:
+            out["product_weight"] = str(w)
+
+    # ── OpenGraph / meta 폴백 ──
+    if not out["title"]:
+        out["title"] = meta.get("og:title") or meta.get("twitter:title")
+    if out["discounted_price"] is None:
+        out["discounted_price"] = _to_num(
+            meta.get("product:price:amount") or meta.get("og:price:amount")
+        )
+    if not out["brand"]:
+        out["brand"] = meta.get("product:brand") or meta.get("og:brand")
+    if not out["images"]:
+        ogimg = meta.get("og:image") or meta.get("twitter:image")
+        if ogimg:
+            out["images"] = [ogimg]
+    out["main_image_url"] = out["images"][0] if out["images"] else None
+
+    # ── microdata(itemprop) 폴백 — JSON-LD/OG 둘 다 빈 칸만 ──
+    if out["rating"] is None:
+        el = soup.find(attrs={"itemprop": "ratingValue"})
+        if el:
+            out["rating"] = _to_num(el.get("content") or el.get_text(strip=True))
+    if out["review_count"] is None:
+        el = soup.find(attrs={"itemprop": ["reviewCount", "ratingCount"]})
+        if el:
+            rc = _to_num(el.get("content") or el.get_text(strip=True))
+            out["review_count"] = int(rc) if rc is not None else None
+    if not out["brand"]:
+        el = soup.find(attrs={"itemprop": "brand"})
+        if el:
+            out["brand"] = (el.get("content") or el.get_text(strip=True)) or None
+
+    return out
+
+
+_IMG_BLOCK_PAT = re.compile(
+    r"(icon|logo|sprite|btn|button|banner|badge|blank|spacer|1x1|pixel|loading|"
+    r"placeholder|emoji|/star|arrow|profile|avatar|sns|share|coupon|^data:)",
+    re.I,
+)
+
+
+def _harvest_gallery_images(soup, main_image_url: Optional[str], limit: int = 10) -> list:
+    """
+    메인 이미지의 CDN host에 앵커링해 같은 host의 상품 이미지를 모은다.
+    같은 CDN만 보므로 광고·아이콘·관련상품(다른 host) 노이즈가 거의 없다.
+    main_image_url 이 없으면 앵커 불가 → 빈 리스트.
+    """
+    from urllib.parse import urlparse
+    if not main_image_url:
+        return []
+    try:
+        host = urlparse(main_image_url if "//" in main_image_url else "https:" + main_image_url).netloc
+    except Exception:
+        return []
+    if not host:
+        return []
+
+    out: list = []
+    seen: set = set()
+
+    def _add(u: str):
+        if not u or u.startswith("data:"):
+            return
+        if u.startswith("//"):
+            u = "https:" + u
+        if _IMG_BLOCK_PAT.search(u):
+            return
+        try:
+            if urlparse(u).netloc != host:
+                return
+        except Exception:
+            return
+        base = u.split("?")[0]
+        if base in seen:
+            return
+        seen.add(base)
+        out.append(u)
+
+    _add(main_image_url)
+    for img in soup.find_all("img"):
+        src = img.get("src") or img.get("data-src") or img.get("data-original") or ""
+        srcset = img.get("srcset") or ""
+        if srcset:
+            parts = [p.strip().split(" ")[0] for p in srcset.split(",") if p.strip()]
+            if parts:
+                src = parts[-1]  # 가장 큰 해상도
+        # 작은 아이콘 크기 필터 (width/height 속성)
+        for dim in (img.get("width"), img.get("height")):
+            try:
+                if dim and int(re.sub(r"\D", "", str(dim)) or "999") < 100:
+                    src = ""
+                    break
+            except Exception:
+                pass
+        if src:
+            _add(src)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _extract_shipping_universal(soup) -> tuple:
+    """
+    텍스트 기반 범용 배송비 추출 (MUI/emotion 등 클래스명 무관 — '무료배송'·'배송비 N원' 텍스트로).
+    반환 (shipping_fee: float|None, shipping_fee_text: str|None). 0.0 = 무료.
+    """
+    text = soup.get_text(" ", strip=True)
+    if not text:
+        return None, None
+    text = re.sub(r"\s+", " ", text)
+    # 배송 관련 구간으로 범위 한정 (가격 추출용; 할부·적립 등 오매칭 방지)
+    m = re.search(r"배송비.{0,140}", text) or re.search(r"배송\s*안내.{0,140}", text)
+    area = m.group(0) if m else text[:2500]
+    head = text[:4000]
+
+    # 1) 유료 + 조건부 무료: "2,500원 (2만원 이상 무료배송)"
+    combined = re.search(r"([\d,]+)\s*원[^(]{0,30}\([^)]*[\d,]+\s*만?\s*원\s*이상[^)]*무료[^)]*\)", area)
+    if combined:
+        return _to_num(combined.group(1)), combined.group(0).strip()
+    # 2) 순수 조건부 무료(기본 배송비 미표시): "3만원 이상 무료배송" — 무조건 무료보다 먼저 검사
+    cond = re.search(r"([\d,]+\s*만?\s*원)\s*이상[^.]{0,25}무료\s*배송?", area)
+    if cond:
+        return None, cond.group(0).strip()
+    # 3) 무조건 무료 (전체 텍스트에서 '무료배송'·'배송비 무료'·'무료 배송')
+    if re.search(r"무료\s*배송|배송비?\s*무료|무료배송", head):
+        return 0.0, "무료배송"
+    # 4) 일반 유료
+    m2 = (re.search(r"배송비\s*[:：]?\s*([\d,]+)\s*원", area)
+          or re.search(r"([\d,]+)\s*원", area))
+    if m2:
+        fee = _to_num(m2.group(1))
+        if fee and 0 < fee < 100000:
+            return fee, f"{m2.group(1)}원"
+    return None, None
+
+
+def _extract_embedded_review(html: str) -> tuple:
+    """HTML 내장 JSON의 평점/리뷰수 키 추출 (네이버 averageReviewScore 등). 반환 (rating, review_count)."""
+    rating = review_count = None
+    for key in ("averageReviewScore", "averageScore", "scoreAverage", "reviewScoreAverage"):
+        m = re.search(r'["\']' + key + r'["\']\s*:\s*([0-9]+(?:\.[0-9]+)?)', html)
+        if m:
+            try:
+                v = float(m.group(1))
+                if 0 < v <= 5:
+                    rating = v
+                    break
+            except ValueError:
+                pass
+    for key in ("totalReviewCount", "reviewCount", "reviewAmount", "reviewTotalCount"):
+        m = re.search(r'["\']' + key + r'["\']\s*:\s*([0-9]+)', html)
+        if m:
+            try:
+                review_count = int(m.group(1))
+                break
+            except ValueError:
+                pass
+    return rating, review_count
+
+
+def _merge_universal(base: "ProductInfo", soup) -> "ProductInfo":
+    """site 파서 결과(base)의 빈 필드를 범용 구조화 데이터로 채운다(비파괴: 기존 값 우선)."""
+    try:
+        u = _universal_structured(soup)
+    except Exception as e:
+        logger.debug("[universal] 추출 실패 (무시): %s", e)
+        return base
+    if not base.title and u["title"]:
+        base.title = u["title"]
+    if base.discounted_price is None and u["discounted_price"] is not None:
+        base.discounted_price = u["discounted_price"]
+    if base.original_price is None and u["original_price"] is not None:
+        base.original_price = u["original_price"]
+    if base.original_price is None and base.discounted_price is not None:
+        base.original_price = base.discounted_price
+    if not base.brand and u["brand"]:
+        base.brand = u["brand"]
+    if base.rating is None and u["rating"] is not None:
+        base.rating = u["rating"]
+    if base.review_count is None and u["review_count"] is not None:
+        base.review_count = u["review_count"]
+    if not base.main_image_url and u["main_image_url"]:
+        base.main_image_url = u["main_image_url"]
+    if not base.images and u["images"]:
+        base.images = u["images"][:10]
+    if not base.product_weight and u["product_weight"]:
+        base.product_weight = u["product_weight"]
+
+    # 갤러리 보강: 이미지가 1장 이하면 메인 이미지 CDN host 앵커로 같은 host 갤러리 수집
+    if len(base.images or []) <= 1:
+        anchor = base.main_image_url or (base.images[0] if base.images else None) or u.get("main_image_url")
+        try:
+            gallery = _harvest_gallery_images(soup, anchor)
+        except Exception:
+            gallery = []
+        if len(gallery) > len(base.images or []):
+            base.images = gallery[:10]
+            if not base.main_image_url:
+                base.main_image_url = gallery[0]
+    return base
 
 
 def _price_from_text(text: str) -> Optional[float]:
@@ -960,6 +1230,21 @@ def _parse_coupang(html: str, page_title: Optional[str], url: Optional[str]) -> 
             if _fm:
                 shipping_fee = _to_num(_fm.group(1))
 
+    # 배송 도착 예정일 (.pdd-contents) — 노이즈 제거 전에 추출. 선택된 배송 옵션 우선.
+    shipping_period: Optional[str] = None
+    _pdd = None
+    for _item in scope.find_all(class_="radio-item"):
+        _radio = _item.find("span", class_="radio")
+        if _radio and "selected" in (_radio.get("class") or []):
+            _pdd = _item.find(class_="pdd-contents")
+            if _pdd:
+                break
+    if _pdd is None:
+        _pdd = scope.find(class_="pdd-contents")
+    if _pdd:
+        _txt = " ".join(_pdd.get_text(" ", strip=True).split())
+        shipping_period = _txt.replace("( ", "(").replace(" )", ")") or None
+
     # 노이즈 영역 제거 (추천/광고/리뷰/배송/적립금 등)
     _noise_attrs = [
         {"class": re.compile(r"recommend|related|advertisement|review|delivery|breadcrumb|banner|coupon|reward|saved|badge", re.I)},
@@ -1172,7 +1457,7 @@ def _parse_coupang(html: str, page_title: Optional[str], url: Optional[str]) -> 
         discounted_price=price,
         discount_rate=discount_rate,
         main_image_url=image,
-        shipping_period=None,
+        shipping_period=shipping_period,
         shipping_fee=shipping_fee,
         product_options=product_options,
         product_weight=None,
@@ -4172,7 +4457,34 @@ def parse_html_only(
     """
     st = shop_type.lower()
     if "naver" in st:
-        return _parse_naver(html, page_title, url)
-    parser = _SITE_PARSERS.get(st, _parse_generic)
-    return parser(html, page_title, url)
+        base = _parse_naver(html, page_title, url)
+    else:
+        parser = _SITE_PARSERS.get(st, _parse_generic)
+        base = parser(html, page_title, url)
+    # 모든 사이트 공통: JSON-LD/OG/microdata로 빈 필드(평점·리뷰·브랜드·이미지 등) 보강
+    try:
+        base = _merge_universal(base, _soup(html))
+    except Exception:
+        pass
+    # HTML 내장 JSON 리뷰 키로 평점/리뷰 최후 보강 (네이버 등 — JSON-LD에 평점 없는 사이트)
+    if base.rating is None or base.review_count is None:
+        try:
+            r, c = _extract_embedded_review(html)
+            if base.rating is None and r is not None:
+                base.rating = r
+            if base.review_count is None and c is not None:
+                base.review_count = c
+        except Exception:
+            pass
+    # 배송비 범용 보강 (텍스트 기반 — site 파서가 못 채웠을 때)
+    if base.shipping_fee is None and not base.shipping_fee_text:
+        try:
+            fee, fee_text = _extract_shipping_universal(_soup(html))
+            if fee is not None:
+                base.shipping_fee = fee
+            if fee_text:
+                base.shipping_fee_text = fee_text
+        except Exception:
+            pass
+    return base
 

@@ -42,8 +42,22 @@ def _empty_tariff_lookup(candidates_found: int = 0) -> dict:
         "specific_unit": None,
         "matched_item": None,
         "순번": None,
+        "full_path": None,
+        "depth_path": [],
         "candidates_found": candidates_found,
     }
+
+
+def _depth_from_full_path(full_path: Optional[str]) -> list[str]:
+    """
+    관세율표 full_path("대분류 > 중분류 > ... > 품목")를 depth 배열로 분해.
+
+    관세 분류는 "이것 중에 → 이것 중에" 식 트리이므로, 검수 담당자가
+    어떤 경로로 이 품목에 도달했는지 단계별로 보여 주는 데 사용한다.
+    """
+    if not full_path or not str(full_path).strip():
+        return []
+    return [seg.strip() for seg in str(full_path).split(">") if seg.strip()]
 
 
 def _parse_llm_selected_index(text: str) -> Optional[int]:
@@ -499,14 +513,14 @@ def search_candidates(
                 except sqlite3.OperationalError:
                     pass
 
-        # 5차: LIKE 부분 문자열
-        if len(results) < 5:
+        # 5차: LIKE 부분 문자열 (후보가 부족할수록 더 적극적으로 — 오분류 방지)
+        if len(results) < max(8, limit // 2):
             by_len = sorted(
-                (k for k in keywords if len(k) >= 3),
+                (k for k in keywords if len(k) >= 2),
                 key=len,
                 reverse=True,
             )
-            for kw in by_len[:5]:
+            for kw in by_len[:8]:
                 if len(results) >= limit:
                     break
                 try:
@@ -516,6 +530,32 @@ def search_candidates(
                         " FROM tariff"
                         " WHERE 한글품명 IS NOT NULL AND 한글품명 LIKE ? LIMIT ?",
                         (f"%{kw}%", limit),
+                    ).fetchall()
+                    _add(like_rows)
+                except sqlite3.OperationalError:
+                    pass
+
+        # 6차: 한글 bigram fallback — 키워드 추출이 모두 빗나가 후보가 거의 없을 때.
+        #      긴 키워드를 2글자 조각으로 쪼개 부분 매칭, 완전 무후보 상황을 줄인다.
+        if len(results) < 3:
+            bigrams: list[str] = []
+            seen_bg: set[str] = set()
+            for kw in sorted((k for k in keywords if len(k) >= 3), key=len, reverse=True):
+                for i in range(len(kw) - 1):
+                    bg = kw[i : i + 2]
+                    if re.search(r"[가-힣]", bg) and bg not in seen_bg:
+                        seen_bg.add(bg)
+                        bigrams.append(bg)
+            for bg in bigrams[:10]:
+                if len(results) >= limit:
+                    break
+                try:
+                    like_rows = conn.execute(
+                        "SELECT rowid, 순번, 한글품명, 기본세율, 잠정세율, WTO협정, RCEP대한민국,"
+                        " CASE WHEN full_path IS NOT NULL THEN full_path ELSE '' END"
+                        " FROM tariff"
+                        " WHERE 한글품명 IS NOT NULL AND 한글품명 LIKE ? LIMIT ?",
+                        (f"%{bg}%", limit),
                     ).fetchall()
                     _add(like_rows)
                 except sqlite3.OperationalError:
@@ -575,9 +615,63 @@ def _row_to_lookup_dict(
         "specific_unit": duty.get("unit"),         # kg|each|...
         "matched_item": 품명_val,
         "순번": 순번_val,
+        "full_path": full_path_val or None,        # "대분류 > ... > 품목" 전체 경로
+        "depth_path": _depth_from_full_path(full_path_val),  # 단계별 분류 배열
         "candidates_found": candidates_found,
         "selection_method": selection_method,
     }
+
+
+def _gather_candidates(
+    product_title: str,
+    db_path: str,
+    limit: int,
+    anthropic_key: Optional[str],
+    openai_key: Optional[str],
+) -> tuple[list[tuple], Optional[str], bool]:
+    """
+    벡터 검색 우선 → 실패 시 Claude 검색어 확장 + FTS5.
+
+    반환: (candidates, search_expansion, non_physical)
+      - non_physical=True 이면 후보 없이 비실물 품목으로 조기 종료
+    """
+    vec_candidates = search_candidates_vec(product_title, db_path, limit=limit, api_key=openai_key)
+    if vec_candidates:
+        logger.info("벡터 검색 사용: '%s' → %d건", product_title[:40], len(vec_candidates))
+        return vec_candidates, None, False
+
+    search_expansion: Optional[str] = None
+    if anthropic_key:
+        search_expansion = _expand_title_for_tariff_db(product_title, anthropic_key)
+        if search_expansion == _NON_PHYSICAL_SENTINEL:
+            return [], None, True
+        if search_expansion:
+            logger.info(
+                "관세 DB 검색 확장(FTS): 원문=%r → hs_search=%r",
+                (product_title or "")[:80],
+                search_expansion[:160],
+            )
+    candidates = search_candidates(product_title, db_path, limit=limit, search_hint=search_expansion)
+    return candidates, search_expansion, False
+
+
+def _candidate_lines(candidates: list[tuple]) -> str:
+    """
+    후보 목록 → LLM 프롬프트용 텍스트. full_path를 분류 컨텍스트로 사용.
+
+    구버전 rowid 역추적 대신 full_path 컬럼을 그대로 쓰므로 분류 경로가 정확하다.
+    """
+    lines = []
+    for i, row in enumerate(candidates, 1):
+        순번, 품명, 기본, 잠정, wto, rcep = row[1:7]
+        full_path = row[7] if len(row) >= 8 else ""
+        depth = _depth_from_full_path(full_path)
+        cat = " > ".join(depth[:-1]) if len(depth) > 1 else ""
+        ctx_note = f"\n   분류: {cat}" if cat else ""
+        lines.append(
+            f"{i}. [{순번}] {품명} | 기본:{기본} | 잠정:{잠정} | WTO:{wto} | RCEP:{rcep}{ctx_note}"
+        )
+    return "\n".join(lines)
 
 
 def lookup_tariff_with_claude(
@@ -605,26 +699,11 @@ def lookup_tariff_with_claude(
     anthropic_key = api_key or os.getenv("ANTHROPIC_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
 
-    # ── 벡터 검색 우선 시도 ──────────────────────────────────────────────────
-    vec_candidates = search_candidates_vec(product_title, db_path, limit=limit, api_key=openai_key)
-    search_expansion: Optional[str] = None
-
-    if vec_candidates:
-        logger.info("벡터 검색 사용: '%s' → %d건", product_title[:40], len(vec_candidates))
-        candidates = vec_candidates
-    else:
-        # vec 없으면 1차 Claude 호출(쿼리 확장) + FTS fallback
-        if anthropic_key:
-            search_expansion = _expand_title_for_tariff_db(product_title, anthropic_key)
-            if search_expansion == _NON_PHYSICAL_SENTINEL:
-                return {"non_physical": True, **_empty_tariff_lookup()}
-            if search_expansion:
-                logger.info(
-                    "관세 DB 검색 확장(FTS): 원문=%r → hs_search=%r",
-                    (product_title or "")[:80],
-                    search_expansion[:160],
-                )
-        candidates = search_candidates(product_title, db_path, limit=limit, search_hint=search_expansion)
+    candidates, search_expansion, non_physical = _gather_candidates(
+        product_title, db_path, limit, anthropic_key, openai_key
+    )
+    if non_physical:
+        return {"non_physical": True, **_empty_tariff_lookup()}
 
     def _with_expansion(out: dict) -> dict:
         if search_expansion and search_expansion != _NON_PHYSICAL_SENTINEL:
@@ -636,36 +715,7 @@ def lookup_tariff_with_claude(
         return _with_expansion(_empty_tariff_lookup())
 
     n = len(candidates)
-
-    # 부모 컨텍스트 조회 (후보 행 직전의 부모 섹션 헤더들)
-    ctx_conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-    try:
-        def _get_parent_ctx(rowid: int, limit: int = 3) -> str:
-            rows = ctx_conn.execute(
-                "SELECT 한글품명 FROM tariff WHERE rowid < ? AND 한글품명 IS NOT NULL "
-                "AND (기본세율 IS NULL OR 기본세율 = '') "
-                "ORDER BY rowid DESC LIMIT ?",
-                (rowid, limit),
-            ).fetchall()
-            parts = [r[0].strip() for r in reversed(rows) if r[0] and r[0].strip()]
-            # 너무 길면 뒤에서 2개만
-            if parts:
-                return " > ".join(parts[-2:])
-            return ""
-    except Exception:
-        def _get_parent_ctx(rowid: int, limit: int = 3) -> str:  # type: ignore
-            return ""
-
-    lines = []
-    for i, row in enumerate(candidates, 1):
-        rid, 순번, 품명, 기본, 잠정, wto, rcep = row[:7]
-        ctx = _get_parent_ctx(rid)
-        ctx_note = f"\n   분류: {ctx}" if ctx else ""
-        lines.append(
-            f"{i}. [{순번}] {품명} | 기본:{기본} | 잠정:{잠정} | WTO:{wto} | RCEP:{rcep}{ctx_note}"
-        )
-    ctx_conn.close()
-    candidates_text = "\n".join(lines)
+    candidates_text = _candidate_lines(candidates)
 
     try:
         import anthropic
@@ -746,3 +796,179 @@ def lookup_tariff_with_claude(
     except Exception as e:
         logger.warning("관세율 조회 실패 (무시): %s", e)
         return _with_expansion(_empty_tariff_lookup(n))
+
+
+# ── 검수 담당자용: 선정 사유 + 대안 후보 (fastbox 통관 분류 확인) ───────────────
+
+def _parse_classification_json(text: str) -> dict:
+    """Claude의 분류 응답에서 {selected, reason, alternatives} 추출 (잡설 섞여도 관용)."""
+    fallback = {"selected": 0, "reason": "", "alternatives": []}
+    if not text or not str(text).strip():
+        return fallback
+    t = str(text).strip()
+    fence = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", t, re.IGNORECASE)
+    if fence and fence.group(1).strip():
+        t = fence.group(1).strip()
+    lo, hi = t.find("{"), t.rfind("}")
+    if lo != -1 and hi > lo:
+        try:
+            data = json.loads(t[lo : hi + 1])
+            sel = data.get("selected", 0)
+            alts = data.get("alternatives", []) or []
+            return {
+                "selected": int(sel) if str(sel).strip().lstrip("-").isdigit() else 0,
+                "reason": str(data.get("reason", "") or "").strip(),
+                "alternatives": [int(a) for a in alts if str(a).strip().isdigit()],
+            }
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
+    # 최소한 selected 번호라도 건진다
+    idx = _parse_llm_selected_index(t)
+    if idx is not None:
+        return {"selected": idx, "reason": "", "alternatives": []}
+    return fallback
+
+
+def _select_with_reasoning(
+    product_title: str,
+    candidates: list[tuple],
+    search_expansion: Optional[str],
+    anthropic_key: Optional[str],
+) -> dict:
+    """
+    후보 중 최적 항목 선택 + **선정 사유** + **대안 후보 순위**를 함께 받는다.
+
+    검수 담당자가 AI 판단 근거를 보고, 다른 분류로 바꿀 수 있도록
+    cheap한 번호-only 선택(lookup_tariff_with_claude) 대신 사유까지 생성.
+    반환: {"selected": int, "reason": str, "alternatives": [int, ...]}
+    """
+    fallback = {"selected": 0, "reason": "", "alternatives": []}
+    if not anthropic_key:
+        return fallback
+    try:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=anthropic_key)
+        candidates_text = _candidate_lines(candidates)
+        prompt = (
+            "역할: 아래 '후보'는 일본 관세율표(HS 품목분류)의 **한글 품목 설명**과 그 분류 경로다. "
+            "위 상품명은 쇼핑몰 판매 제목이라 글자가 같을 필요는 없고, **같은 실물 품목**"
+            "(재질·용도·종류·기능)에 해당하는 줄을 고른다.\n\n"
+            "관세 분류는 대분류 → 중분류 → 세부품목으로 좁혀지는 트리다. 각 후보의 '분류' 경로가 "
+            "상품과 맞는지도 함께 보고 판단한다.\n\n"
+            "규칙:\n"
+            "- 후보 목록에 없는 품목·세율·HS를 새로 만들지 않는다. **후보 번호만** 사용한다.\n"
+            "- selected: 가장 적합한 후보 1개 번호. 맞는 것이 없으면 0.\n"
+            "- reason: selected를 고른 이유를 한국어 1~3문장으로. 어떤 분류 경로·재질·용도 때문에 "
+            "이 품목으로 봤는지 검수 담당자가 이해할 수 있게 설명한다.\n"
+            "- alternatives: selected 외에 채택될 여지가 있는 후보 번호를 적합한 순서대로 최대 5개. "
+            "헷갈릴 만한 다른 분류를 우선 포함한다. 없으면 빈 배열.\n"
+            "- 출력은 JSON 하나만.\n\n"
+            f'상품명(판매 제목): "{product_title}"\n\n'
+            f"후보(관세율표 한글 품목 설명 / 분류 경로):\n{candidates_text}\n\n"
+            '출력 예: {"selected": 3, "reason": "면 편직물 상의로 분류 경로가 의류>티셔츠와 일치한다.", '
+            '"alternatives": [5, 2]}'
+        )
+        if search_expansion:
+            prompt = (
+                f"품목 요약(관세·HS 관점 정리, 참고용): {search_expansion}\n\n" + prompt
+            )
+
+        resp = client.messages.create(
+            model=_tariff_select_model(),
+            max_tokens=600,
+            temperature=0,
+            system=(
+                "당신은 일본 수입 관세 품목분류(HS) 전문가입니다. "
+                "반드시 JSON 하나만 출력하고, 후보 목록의 번호만 사용하세요."
+            ),
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return _parse_classification_json(resp.content[0].text.strip())
+    except Exception as e:
+        logger.warning("관세 분류 사유 생성 실패 (무시): %s", e)
+        return fallback
+
+
+def _candidate_summary(row: tuple, *, product_title: str) -> dict:
+    """후보 행 → 검수자 화면용 요약 dict (세율·품명·분류 경로)."""
+    d = _row_to_lookup_dict(
+        row,
+        candidates_found=0,
+        selection_method="llm",
+        product_title=product_title,
+    )
+    d.pop("candidates_found", None)
+    d.pop("selection_method", None)
+    return d
+
+
+def classify_tariff(
+    product_title: str,
+    db_path: str = _DEFAULT_DB_PATH,
+    api_key: Optional[str] = None,
+    top_n: int = 5,
+    limit: int = 30,
+) -> dict:
+    """
+    검수 담당자용 관세 품목 분류. fastbox 통관 등록 전에:
+      - selected     : AI가 고른 HS코드/품명/분류 경로 + **선정 사유(reason)**
+      - alternatives : 채택될 여지가 있는 다른 후보들(각자 분류 경로·세율 포함)
+
+    검수 담당자는 selected를 그대로 확정하거나, alternatives에서 다른 분류를
+    선택하거나, 직접 입력해 수정·피드백할 수 있다.
+
+    반환 dict:
+      product_title, non_physical, search_expansion, candidates_found,
+      selected: {hs_code, matched_item, full_path, depth_path, rate, rate_source,
+                 duty_type, specific_yen_per_unit, specific_unit, reason} | None,
+      alternatives: [{...같은 키..., rank}, ...]
+    """
+    anthropic_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+
+    candidates, search_expansion, non_physical = _gather_candidates(
+        product_title, db_path, limit, anthropic_key, openai_key
+    )
+    expansion = search_expansion if (search_expansion and search_expansion != _NON_PHYSICAL_SENTINEL) else None
+    base = {
+        "product_title": product_title,
+        "non_physical": non_physical,
+        "search_expansion": expansion,
+        "candidates_found": len(candidates),
+        "selected": None,
+        "alternatives": [],
+    }
+    if non_physical or not candidates:
+        return base
+
+    sel = _select_with_reasoning(product_title, candidates, search_expansion, anthropic_key)
+    selected_idx = sel.get("selected") or 0
+
+    def _to_summary(idx: int) -> dict:
+        return _candidate_summary(candidates[idx - 1], product_title=product_title)
+
+    if 1 <= selected_idx <= len(candidates):
+        chosen = _to_summary(selected_idx)
+        chosen["reason"] = sel.get("reason", "")
+        base["selected"] = chosen
+
+    # 대안: LLM이 준 순위를 우선, 부족하면 검색 순서대로 채운다 (selected 제외)
+    alt_indices: list[int] = []
+    for i in sel.get("alternatives", []):
+        if 1 <= i <= len(candidates) and i != selected_idx and i not in alt_indices:
+            alt_indices.append(i)
+    for i in range(1, len(candidates) + 1):
+        if len(alt_indices) >= top_n:
+            break
+        if i != selected_idx and i not in alt_indices:
+            alt_indices.append(i)
+
+    alternatives = []
+    for rank, i in enumerate(alt_indices[:top_n], 1):
+        summary = _to_summary(i)
+        summary["rank"] = rank
+        alternatives.append(summary)
+    base["alternatives"] = alternatives
+
+    return base

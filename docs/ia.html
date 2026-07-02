@@ -72,7 +72,7 @@
 </section>
 
 <section id="cs">
-  <h2><span class="pill" style="background:rgba(240,169,59,.16);color:#f0bd6b">CS 콘솔</span> 대리구매 → 검수 → FastBox (process 체인)</h2>
+  <h2><span class="pill" style="background:rgba(240,169,59,.16);color:#f0bd6b">CS 콘솔</span> 대리구매 → 검수 → HS분류 → FastBox (process 체인)</h2>
   <p class="lead">담당 추적(허브)에서 각 작업으로 진입. 핵심은 <b>대리구매 → 검수 → FastBox 인계</b>로 이어지는 처리 순서이며, 각 단계가 주문 상태를 전이시킵니다.</p>
   <div class="flowscroll"><div class="stage" id="flow-cs"></div></div>
 </section>
@@ -110,6 +110,7 @@
       {id:'S-08',  code:'S-08',  name:'주문 완료', hint:'group_number', col:6,row:1, kind:'c'},
       {id:'S-10',  code:'S-10',  name:'주문 상세(13단계)', hint:'추적·가격·배송', col:7,row:2, kind:'c', conv:'2 in'},
       {id:'S-1113',code:'S-11~13',name:'문의·취소·환불', hint:'CS 접수', col:8,row:1, kind:'c'},
+      {id:'S-10b', code:'S-10b', name:'배송 추적 타임라인', hint:'5단계·이벤트 로그', col:8,row:2, kind:'c'},
       {id:'P-01',  code:'P-01',  name:'세관 스냅샷(공개)', hint:'uuid·name_en', col:8,row:3, kind:'p'}
     ],
     edges:[
@@ -123,7 +124,7 @@
       ['S-04','S-06','담기'],
       ['S-06','S-07','선택 결제'],['S-07','S-08'],
       ['S-08','S-10'],['S-09','S-10'],
-      ['S-10','S-1113'],['S-10','P-01']
+      ['S-10','S-1113'],['S-10','S-10b','배송 추적'],['S-10','P-01']
     ]
   };
 
@@ -133,7 +134,8 @@
       {id:'C-05',code:'C-05', name:'내 담당 건 추적', hint:'scope=mine', col:1,row:1, kind:'s', hub:true},
       {id:'C-01',code:'C-01', name:'대리구매 작업', hint:'원본URL·실제가·집하주소', col:2,row:0, kind:'s'},
       {id:'C-02',code:'C-02', name:'상품 검수', hint:'pass/issue', col:3,row:0, kind:'s'},
-      {id:'C-03',code:'C-03', name:'FastBox 인계', hint:'송장·배송지시', col:4,row:0, kind:'s'},
+      {id:'C-06',code:'C-06', name:'HS 통관 분류 검수', hint:'HS코드·사유·대안', col:4,row:0, kind:'s'},
+      {id:'C-03',code:'C-03', name:'FastBox 인계', hint:'송장·배송지시', col:5,row:0, kind:'s'},
       {id:'C-04',code:'C-04', name:'CS 응대', hint:'문의·취소·환불 1차', col:2,row:2, kind:'s'},
       {id:'H-03',code:'H-03', name:'본사 환불 실행', hint:'GMO 환불', col:3,row:2, kind:'h'}
     ],
@@ -141,7 +143,8 @@
       ['CSL','C-05'],
       ['C-05','C-01'],
       ['C-01','C-02','구매완료·입고'],
-      ['C-02','C-03','검수완료'],
+      ['C-02','C-06','검수'],
+      ['C-06','C-03','HS확정'],
       ['C-05','C-04'],
       ['C-04','H-03','환불 승인 인계']
     ]

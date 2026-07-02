@@ -1,0 +1,14 @@
+{
+  "collection": {
+    "access_method": "chrome",
+    "network_patterns": [
+      "/products/{product_no}?preview",
+      "/products/{product_no}/options",
+      "/products/{product_no}/product-reviews"
+    ],
+    "notes": "NHN Commerce 기반. shop-api.e-ncp.com API로 모든 데이터 수집. 가격: salePrice-immediateDiscountAmt-additionDiscountAmt. 단일/다단계 옵션 모두 지원. dutyInfo JSON→specifications 파싱. content HTML에 상세이미지 포함. reviewRate/counter.reviewCnt 직접 접근 가능."
+  },
+  "domain": "thirtymall.com",
+  "created_at": "2026-06-28T12:10:36",
+  "updated_at": "2026-06-28T12:20:02"
+}

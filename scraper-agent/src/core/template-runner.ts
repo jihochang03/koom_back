@@ -69,10 +69,12 @@ export function mapToProductData(raw: Record<string, unknown>): ProductData {
     availability:      (raw.availability as ProductData["availability"]) ?? "unknown",
     shipping_fee:      (raw.shipping_fee as number) ?? null,
     shipping_fee_text: (raw.shipping_fee_text as string) ?? null,
+    delivery_date:     (raw.delivery_date as string) ?? null,
     rating:            (raw.rating as number) ?? null,
     review_count:      (raw.review_count as number) ?? null,
     seller:            (raw.seller as string) ?? null,
     specifications:    (raw.specifications as Record<string, string>) ?? {},
+    size:              (raw.size as ProductData["size"]) ?? null,
   };
 }
 

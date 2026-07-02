@@ -9,6 +9,13 @@ interface TemplateFile {
   updated_at: string
 }
 
+const EXAMPLE_DOMAINS = [
+  'coupang.com',
+  'smartstore.naver.com',
+  'musinsa.com',
+  'gmarket.co.kr',
+]
+
 type Msg =
   | { kind: 'user';    id: string; url: string }
   | { kind: 'badge';   id: string; mode: 'template'; domain: string }
@@ -23,6 +30,7 @@ export default function ScrapePage() {
   const [loading, setLoading]   = useState(false)
   const [templates, setTemplates] = useState<TemplateFile[]>([])
   const bottomRef               = useRef<HTMLDivElement>(null)
+  const inputRef                = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -129,7 +137,12 @@ export default function ScrapePage() {
     }
 
     setLoading(false)
+    setTimeout(() => inputRef.current?.focus(), 50)
   }, [input, loading, templates])
+
+  const exampleChips = templates.length > 0
+    ? templates.slice(0, 6).map(t => t.domain)
+    : EXAMPLE_DOMAINS
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); scrape() }
@@ -158,13 +171,27 @@ export default function ScrapePage() {
       <div className="scrape-main">
         <div className="messages">
           {msgs.length === 0 && (
-            <div className="empty">
-              <div className="empty-icon">⚡</div>
+            <div className="empty-state">
+              <div className="empty-logo">⚡</div>
               <div className="empty-title">Knowledge 템플릿으로 즉시 수집</div>
               <div className="empty-sub">
                 Knowledge에 템플릿이 있는 사이트는<br />
                 Claude 없이 바로 데이터를 가져옵니다<br />
                 없는 사이트는 Claude가 자동으로 처리합니다
+              </div>
+              <div className="empty-chips">
+                {exampleChips.map(d => (
+                  <button
+                    key={d}
+                    className="chip"
+                    onClick={() => {
+                      setInput(`https://${d}/`)
+                      inputRef.current?.focus()
+                    }}
+                  >
+                    {d}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -207,24 +234,31 @@ export default function ScrapePage() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="input-bar">
-          <input
-            className="url-input"
-            type="url"
-            placeholder="https://... 상품 페이지 URL"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            disabled={loading}
-            autoFocus
-          />
-          <button
-            className={`analyze-btn${loading ? ' loading' : ''}`}
-            onClick={scrape}
-            disabled={loading}
-          >
-            {loading ? '수집 중' : '수집'}
-          </button>
+        <div className="input-area">
+          <div className="input-wrap">
+            <div className="input-box">
+              <input
+                ref={inputRef}
+                type="url"
+                placeholder="https://... 상품 페이지 URL을 입력하세요"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={onKeyDown}
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+            <button
+              className={`send-btn${loading ? ' loading' : ''}`}
+              onClick={scrape}
+              disabled={loading}
+            >
+              {loading ? '수집 중...' : '수집'}
+            </button>
+          </div>
+          <div className="input-hint">
+            Enter로 수집 · Knowledge 템플릿 있으면 0토큰, 없으면 Claude 분석
+          </div>
         </div>
       </div>
     </div>

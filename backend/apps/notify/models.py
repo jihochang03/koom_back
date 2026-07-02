@@ -17,6 +17,8 @@ EVENT_CHOICES = [
     ('delivered',          '배송 완료'),
     ('cancel_complete',    '취소 완료'),
     ('refund_complete',    '환불 완료'),
+    ('customs_rejected',   '통관 거절 안내'),
+    ('delivery_failed',    '배송 실패 안내'),
     ('custom',             '커스텀'),
 ]
 

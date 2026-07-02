@@ -2,14 +2,16 @@ import requests
 from django.conf import settings
 
 
+# FastBox status_code → 고객 표시 상태 + 추적 진행 바 4단계(stage).
+# `stage` 값은 logistics.stages.TRACKING_STAGE_ORDER 와 일치한다 (진행 바 권위 소스).
 DHUB_STATUS_MAP = {
-    'ORE':            {'customer_status': '주문 접수',          'stage': 'order_received'},
-    'RPE':            {'customer_status': '국제 배송 준비',      'stage': 'preparing_dispatch'},
-    'RFI':            {'customer_status': '일본 배송사 인계',    'stage': 'jp_carrier_handover'},
-    'InTransit':      {'customer_status': '국제 배송 중',        'stage': 'intl_shipping'},
-    'OutForDelivery': {'customer_status': '배달 예정',           'stage': 'intl_shipping'},
-    'Delivered':      {'customer_status': '배송 완료',           'stage': 'delivered'},
-    'AttemptFail':    {'customer_status': '배달 시도 실패',      'stage': 'intl_shipping'},
+    'ORE':            {'customer_status': '주문 접수',       'stage': 'shipment_sent'},
+    'RPE':            {'customer_status': '국제 배송 준비',   'stage': 'shipment_sent'},
+    'RFI':            {'customer_status': '일본 배송사 인계', 'stage': 'intl_transit'},
+    'InTransit':      {'customer_status': '국제 배송 중',     'stage': 'intl_transit'},
+    'OutForDelivery': {'customer_status': '배달 예정',        'stage': 'domestic_delivery'},
+    'Delivered':      {'customer_status': '배송 완료',        'stage': 'delivered'},
+    'AttemptFail':    {'customer_status': '배달 시도 실패',   'stage': 'domestic_delivery'},
 }
 
 
@@ -50,6 +52,9 @@ class DHubClient:
                         receiver_zipcode, receiver_address1
         반환: {fb_invoice_no, ord_no, ord_bundle_no, result, delivery_type, ...}
         """
+        # hs_code·통관 카테고리: 검수 담당자가 확정한 값(address로 주입)을 우선,
+        # 없으면 주문 카테고리 → 기본값(621790, 여성 의류) 순.
+        prd_category = address.get('prd_category') or order.product_category or 'General'
         item = {
             'seller_ord_code':      order.order_number,
             'seller_ord_item_code': order.order_number,
@@ -57,9 +62,9 @@ class DHubClient:
             'input_item_name':      order.title[:200],
             'ord_qty':              order.quantity,
             'selling_price':        float(order.price_product or 0),
-            'hs_code':              address.get('hs_code', '621790'),
-            'prd_category':         order.product_category or 'General',
-            'prd_category_info':    order.product_category or 'General',
+            'hs_code':              address.get('hs_code') or '621790',
+            'prd_category':         prd_category,
+            'prd_category_info':    address.get('prd_category_info') or prd_category,
             'material':             address.get('material', ''),
             'cloth_material':       address.get('cloth_material', ''),
             'discount_price':       float(order.price_discount or 0),
@@ -144,8 +149,8 @@ class DHubClient:
         return self._check(resp)
 
     def map_status(self, status_code: str) -> dict:
-        """DHUB status_code → {customer_status, stage}"""
+        """DHUB status_code → {customer_status, stage(4단계 추적 진행 바)}"""
         return DHUB_STATUS_MAP.get(status_code, {
             'customer_status': status_code,
-            'stage': 'intl_shipping',
+            'stage': 'intl_transit',
         })

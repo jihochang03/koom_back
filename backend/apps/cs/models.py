@@ -36,6 +36,16 @@ REFUND_STATUS_CHOICES = [
     ('completed',         '환불 완료'),
 ]
 
+# 취소/환불 요청 사유 유형. `change_of_mind`(단순변심)만 FastBox 인계 컷오프 적용,
+# 나머지(DK 귀책)는 단계 무관하게 접수 허용. (apps.orders.policy 참고)
+REQUEST_REASON_TYPE_CHOICES = [
+    ('change_of_mind', '단순변심'),
+    ('defect',         '하자/불량'),
+    ('mis_ship',       '오배송'),
+    ('inspection',     '검수이슈'),
+    ('other',          '기타'),
+]
+
 
 class Inquiry(models.Model):
     customer_id   = models.CharField(max_length=255, db_index=True)
@@ -61,6 +71,7 @@ class CancelRequest(models.Model):
     order_number        = models.CharField(max_length=50, unique=True, db_index=True)
     customer_id         = models.CharField(max_length=255, db_index=True)
     reason              = models.TextField()
+    reason_type         = models.CharField(max_length=20, choices=REQUEST_REASON_TYPE_CHOICES, default='change_of_mind', db_index=True)
     status              = models.CharField(max_length=20, choices=CANCEL_STATUS_CHOICES, default='pending', db_index=True)
     shipping_fee_burden = models.BooleanField(default=False)  # 고객 배송비 부담 여부
     admin_notes         = models.TextField(blank=True)
@@ -79,6 +90,7 @@ class RefundRequest(models.Model):
     order_number      = models.CharField(max_length=50, unique=True, db_index=True)
     customer_id       = models.CharField(max_length=255, db_index=True)
     reason            = models.TextField()
+    reason_type       = models.CharField(max_length=20, choices=REQUEST_REASON_TYPE_CHOICES, default='change_of_mind', db_index=True)
     requested_amount  = models.FloatField()
     approved_amount   = models.FloatField(null=True, blank=True)
     status            = models.CharField(max_length=20, choices=REFUND_STATUS_CHOICES, default='pending', db_index=True)
