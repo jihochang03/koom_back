@@ -976,6 +976,8 @@ class _Slot:
         except Exception:
             pass
         self.collector.driver = None
+        # close()가 실패해도 프로세스가 남아있을 수 있으므로 강제 종료
+        _kill_chrome_using_profile(_profile_dir(self.slot_id))
         _clean_profile_locks(_profile_dir(self.slot_id))
         try:
             self.collector.start()
@@ -1231,6 +1233,8 @@ class _NaverSlot:
             self.collector.close()
         except Exception:
             pass
+        # close()가 실패해도 프로세스가 남아있을 수 있으므로 강제 종료
+        _kill_chrome_using_profile(_naver_profile_dir())
         _clean_profile_locks(_naver_profile_dir())
         try:
             self.collector.start()

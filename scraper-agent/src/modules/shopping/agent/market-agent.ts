@@ -83,8 +83,10 @@ export async function runMarketAgent(): Promise<void> {
   async function getContextForDomain(domain: string): Promise<{ context: BrowserContext; page: Page }> {
     if (contextCache.has(domain)) {
       const cached = contextCache.get(domain)!;
-      try { await cached.page.title(); return cached; } catch {}
-      contextCache.delete(domain);
+      try { await cached.page.title(); return cached; } catch {
+        contextCache.delete(domain);
+        try { await cached.context.close(); } catch { /* already dead */ }
+      }
     }
     const fresh = await launchContext(domain);
     contextCache.set(domain, fresh);

@@ -4,29 +4,53 @@ import type { AgentTool } from "../../core/agent-core";
 let browser: Browser | null = null;
 let context: BrowserContext | null = null;
 let page: Page | null = null;
+let launching = false;
+
+function _resetBrowser() {
+  browser = null;
+  context = null;
+  page = null;
+}
 
 async function getPage(): Promise<Page> {
-  if (!browser) {
+  // 이미 살아있는 페이지 반환
+  if (browser && page) {
+    try { await page.evaluate('1'); return page; } catch { _resetBrowser(); }
+  }
+
+  // 동시 launch 방지 — 다른 caller가 launch 중이면 완료까지 대기
+  if (launching) {
+    await new Promise<void>(resolve => {
+      const id = setInterval(() => { if (!launching) { clearInterval(id); resolve(); } }, 100);
+    });
+    if (browser && page) return page;
+  }
+
+  launching = true;
+  try {
     browser = await chromium.launch({
       headless: false,
       args: ["--no-sandbox", "--disable-blink-features=AutomationControlled"],
     });
+    browser.on('disconnected', _resetBrowser);
     context = await browser.newContext({
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       viewport: { width: 1280, height: 800 },
     });
     page = await context.newPage();
+    page.on('crash', _resetBrowser);
+  } finally {
+    launching = false;
   }
   return page!;
 }
 
 export async function closeBrowser(): Promise<void> {
-  if (browser) {
-    await browser.close();
-    browser = null;
-    context = null;
-    page = null;
+  const b = browser;
+  _resetBrowser();
+  if (b) {
+    try { await b.close(); } catch { /* already closed */ }
   }
 }
 

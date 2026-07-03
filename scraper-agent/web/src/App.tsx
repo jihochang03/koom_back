@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import AgentPage from './AgentPage'
-import KnowledgePage from './KnowledgePage'
 import ScrapePage from './ScrapePage'
 import ListCrawlPage from './ListCrawlPage'
 import SavedProductsPage from './SavedProductsPage'
 
-type Tab = 'agent' | 'knowledge' | 'scrape' | 'list' | 'saved'
+type Tab = 'agent' | 'scrape' | 'list' | 'saved'
 
 function getStoredTheme(): 'light' | 'dark' | null {
   return (localStorage.getItem('theme') as 'light' | 'dark') ?? null
@@ -56,12 +55,6 @@ export default function App() {
             Agent
           </button>
           <button
-            className={`header-btn${tab === 'knowledge' ? ' active' : ''}`}
-            onClick={() => setTab('knowledge')}
-          >
-            Knowledge
-          </button>
-          <button
             className={`header-btn${tab === 'scrape' ? ' active' : ''}`}
             onClick={() => setTab('scrape')}
           >
@@ -86,7 +79,6 @@ export default function App() {
       </header>
 
       {tab === 'agent' && <AgentPage />}
-      {tab === 'knowledge' && <KnowledgePage />}
       {tab === 'scrape' && <ScrapePage />}
       {tab === 'list' && <ListCrawlPage />}
       {tab === 'saved' && <SavedProductsPage />}
