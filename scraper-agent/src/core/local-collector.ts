@@ -52,6 +52,7 @@ export interface CollectResult {
   source_port: number;
   network_log: NetworkLogEntry[];
   product_info?: ParsedProductInfo;
+  screenshot_b64?: string;
 }
 
 let _serverProcess: ChildProcess | null = null;
@@ -210,6 +211,7 @@ export async function collectHTML(url: string): Promise<CollectResult | null> {
           source_port: COLLECTOR_PORT,
           network_log: data.network_log ?? [],
           product_info: data.product_info,
+          screenshot_b64: (data as Record<string, unknown>).screenshot_b64 as string | undefined,
         };
       }
 

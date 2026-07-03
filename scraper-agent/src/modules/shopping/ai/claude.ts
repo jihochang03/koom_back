@@ -468,6 +468,7 @@ export async function narrateAndExtract({
   productInfo,
   onText,
   category,
+  screenshotB64,
 }: {
   url: string;
   html: string;
@@ -477,6 +478,8 @@ export async function narrateAndExtract({
   onText?: (chunk: string) => void;
   /** 카테고리 ID. 미지정 또는 'shopping' 이면 기존 쇼핑 로직 그대로 동작 */
   category?: string | null;
+  /** 렌더된 페이지 스크린샷 base64 (PNG). 있으면 Claude가 시각적으로 페이지를 먼저 파악. */
+  screenshotB64?: string;
 }): Promise<Record<string, unknown>> {
   const isShopping = isShoppingCategory(category);
   const categoryDef = getCategory(category);
@@ -530,11 +533,18 @@ ${categoryDef.schemaExample}
     `\n${"─".repeat(50)}\nHTML (앞 30000자):\n${"─".repeat(50)}\n${html.slice(0, 30_000)}`,
   ].filter(Boolean).join("\n");
 
+  const messageContent: Anthropic.MessageParam["content"] = screenshotB64
+    ? [
+        { type: "image", source: { type: "base64", media_type: "image/png", data: screenshotB64 } },
+        { type: "text", text: content },
+      ]
+    : content;
+
   const stream = client().messages.stream({
     model: "claude-sonnet-4-6",
     max_tokens: 4_000,
     system: systemPrompt,
-    messages: [{ role: "user", content }],
+    messages: [{ role: "user", content: messageContent }],
   });
 
   let fullText = "";

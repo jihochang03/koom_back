@@ -165,11 +165,13 @@ export default async function handler(
   }
 
   log(`→ Claude가 페이지를 읽고 있어요... (카테고리: ${category ?? "shopping"})`);
+  if (localResult?.screenshot_b64) log(`  스크린샷 포함 — Claude가 시각적으로 페이지를 확인합니다.`);
   const result = await narrateAndExtract({
     url, html, networkEntries, networkLog,
     productInfo: localResult?.product_info as Record<string, unknown> | undefined,
     onText: callbacks?.onText,
     category,
+    screenshotB64: localResult?.screenshot_b64,
   }) as unknown as ProductData;
 
   // 국제배송 크기/무게가 없으면 상세 이미지 OCR 폴백

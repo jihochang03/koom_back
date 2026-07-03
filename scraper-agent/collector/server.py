@@ -1358,6 +1358,12 @@ def collect_general():
 
         page_title = result.get('page_title', '')
         product_info = _run_html_parser(result['html'], url, page_title, result.get('network_log', []))
+
+        try:
+            screenshot = _screenshot_b64(_naver_slot.collector.driver)
+        except Exception:
+            screenshot = None
+
         return jsonify({
             'html': html_out,
             'page_title': page_title,
@@ -1365,6 +1371,7 @@ def collect_general():
             'network_log': [],
             'option_triggers': result.get('option_triggers', []),
             'product_info': product_info,
+            'screenshot_b64': screenshot,
             'success': True,
         })
 
@@ -1398,6 +1405,11 @@ def collect_general():
         page_title = result.get('page_title', '')
         product_info = _run_html_parser(result['html'], url, page_title, result.get('network_log', []))
 
+        try:
+            screenshot = _screenshot_b64(slot.collector.driver)
+        except Exception:
+            screenshot = None
+
         return jsonify({
             'html': html_out,
             'page_title': page_title,
@@ -1405,6 +1417,7 @@ def collect_general():
             'network_log': result.get('network_log', []),
             'option_triggers': result.get('option_triggers', []),
             'product_info': product_info,
+            'screenshot_b64': screenshot,
             'success': True,
         })
     except Exception as e:
@@ -1432,6 +1445,215 @@ _BLOCK_SIGNALS = [
     'automated access', '비정상적인 접근', '잠시 후 다시',
     'cloudflare', 'ddos-guard', 'challenge',
 ]
+
+
+# ── Vision 범용 추출 ──────────────────────────────────────────────────────────
+
+import base64 as _b64
+
+def _screenshot_b64(driver) -> str:
+    """현재 뷰포트 스크린샷 → PNG base64."""
+    return _b64.b64encode(driver.get_screenshot_as_png()).decode()
+
+
+_VISION_PRODUCT_SYSTEM = (
+    "You are a product data extractor for a Korean shopping page. "
+    "Extract all visible product information from the screenshot. "
+    "Respond with ONLY a valid JSON object, no markdown."
+)
+
+_VISION_PRODUCT_PROMPT = """\
+Extract all product information visible in this screenshot.
+
+Return this exact JSON:
+{
+  "title": "product title",
+  "price_original": 26000,
+  "price_discounted": 19900,
+  "discount_rate": 23,
+  "options": [
+    {"name": "색상", "values": ["Ivory", "Black", "Cream"]},
+    {"name": "사이즈", "values": ["Free", "S", "M", "L"]}
+  ],
+  "availability": "in_stock",
+  "shipping_fee": 3000,
+  "shipping_fee_text": "3,000원 (50,000원 이상 무료)",
+  "brand": "brand name if visible",
+  "notes": "cascade option needs click / other observations"
+}
+
+Rules:
+- prices are integers KRW (no commas, no symbol)
+- price_discounted = lower final price; price_original = higher crossed-out price
+- availability: in_stock | out_of_stock | limited_stock | unknown
+- shipping_fee: 0=free, integer=paid, null=unknown
+- options: ALL visible groups. If a group says "select X first", note in notes, include what IS visible
+- null for anything not determinable
+"""
+
+
+def _vision_extract(driver) -> dict:
+    """스크린샷 → Claude Haiku Vision → 상품 정보 dict 반환."""
+    import anthropic
+    import json as _json
+    import re as _re2
+
+    b64 = _screenshot_b64(driver)
+    try:
+        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2000,
+            system=_VISION_PRODUCT_SYSTEM,
+            messages=[{"role": "user", "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": b64}},
+                {"type": "text", "text": _VISION_PRODUCT_PROMPT},
+            ]}],
+        )
+        text = resp.content[0].text if resp.content else ""
+        m = _re2.search(r'\{[\s\S]*\}', text)
+        if m:
+            return _json.loads(m.group())
+    except Exception as e:
+        logger.warning("[Vision] 추출 실패: %s", e)
+    return {}
+
+
+def _probe_cascade(driver) -> list:
+    """
+    범용 Cascade 프로빙: 1단계 옵션 요소를 하나씩 클릭하고
+    매번 스크린샷을 찍어 2단계 옵션이 드러나도록 한다.
+    반환: base64 PNG 목록 (최대 4장).
+    """
+    from selenium.webdriver.common.by import By
+
+    # 1단계 옵션 트리거 후보 — 우선순위 순
+    TRIGGER_SELECTORS = [
+        'a[data-type="1"]',          # attrangs 컬러칩 패턴
+        '.colorbox a',
+        '[class*="color"] a[data-ops_idx]',
+        '[class*="swatch"] button',
+        '[class*="chip"] button',
+    ]
+
+    screenshots = []
+    for sel in TRIGGER_SELECTORS:
+        try:
+            els = [e for e in driver.find_elements(By.CSS_SELECTOR, sel) if e.is_displayed()]
+        except Exception:
+            continue
+        if not els:
+            continue
+
+        for el in els[:4]:
+            try:
+                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                driver.execute_script("arguments[0].click();", el)
+                time.sleep(0.8)
+                screenshots.append(_screenshot_b64(driver))
+                if len(screenshots) >= 4:
+                    break
+            except Exception:
+                continue
+        if screenshots:
+            break
+    return screenshots
+
+
+def _merge_options(base: list, extra: list) -> list:
+    """두 options 리스트를 이름 기준으로 병합 (중복 값 제거)."""
+    result = [dict(g) for g in base]
+    for eg in extra:
+        existing = next((g for g in result if g.get('name') == eg.get('name')), None)
+        if existing:
+            seen = set(existing.get('values') or [])
+            for v in eg.get('values') or []:
+                if v and v not in seen:
+                    existing.setdefault('values', []).append(v)
+                    seen.add(v)
+        elif eg.get('values'):
+            result.append(eg)
+    return result
+
+
+@app.route('/extract/visual', methods=['POST'])
+def extract_visual():
+    """
+    범용 비주얼 상품 정보 추출.
+    1) Chrome 슬롯에서 URL 렌더링 → 스크린샷 → Claude Vision
+    2) 옵션 미완전 시 cascade 클릭 프로빙 → 추가 Vision 호출로 옵션 병합
+
+    body: { "url": "..." }
+    반환: { title, price_original, price_discounted, options, availability,
+            shipping_fee, shipping_fee_text, brand, source, url }
+    """
+    import anthropic
+    import json as _json
+    import re as _re2
+
+    data = request.get_json() or {}
+    url = (data.get('url') or '').strip()
+
+    slot = _acquire_slot()
+    if slot is None:
+        return _busy_response()
+
+    try:
+        driver = slot.collector.driver
+
+        if url:
+            try:
+                if driver.current_url.rstrip('/') != url.rstrip('/'):
+                    slot._navigate_js(url)
+            except Exception:
+                slot._navigate_js(url)
+
+        # 1) 초기 스크린샷 → Vision 기본 추출
+        result = _vision_extract(driver)
+        all_options = list(result.get('options') or [])
+
+        # 2) 옵션 불완전(2단계 없거나 비어있음) → cascade 프로빙
+        needs_probe = (
+            not all_options
+            or len(all_options) < 2
+            or any(not g.get('values') for g in all_options)
+            or (result.get('notes') and 'cascade' in str(result.get('notes', '')).lower())
+        )
+        if needs_probe:
+            cascade_shots = _probe_cascade(driver)
+            for shot_b64 in cascade_shots:
+                try:
+                    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+                    resp = client.messages.create(
+                        model="claude-haiku-4-5-20251001",
+                        max_tokens=600,
+                        messages=[{"role": "user", "content": [
+                            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": shot_b64}},
+                            {"type": "text", "text": (
+                                "List ALL visible option values in this product page screenshot. "
+                                "Return ONLY JSON: {\"options\": [{\"name\": \"...\", \"values\": [...]}]}"
+                            )},
+                        ]}],
+                    )
+                    text = resp.content[0].text if resp.content else ""
+                    m = _re2.search(r'\{[\s\S]*\}', text)
+                    if m:
+                        extra = _json.loads(m.group()).get('options') or []
+                        all_options = _merge_options(all_options, extra)
+                except Exception as e:
+                    logger.debug("[Vision/cascade] 프로빙 스크린샷 처리 실패: %s", e)
+
+        result['options'] = all_options
+        result['source'] = 'vision'
+        result['url'] = url or driver.current_url
+        logger.info("[Vision] 추출 완료: %s — 옵션 %d그룹", result.get('title', '')[:40], len(all_options))
+        return jsonify({'success': True, **result})
+
+    except Exception as e:
+        logger.error("[Vision] /extract/visual 실패: %s", e, exc_info=True)
+        return jsonify({'error': str(e), 'success': False}), 500
+    finally:
+        slot.release()
 
 
 @app.route('/extract/size', methods=['POST'])
