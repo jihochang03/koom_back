@@ -1,0 +1,9 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "cafe24 기반 쇼핑몰. simple requests로 수집 가능. 옵션은 select[product_type='product_option'] 속성으로 현재 상품 옵션만 추출(추가상품 옵션 addproduct_option 제외). 이미지는 BigImage + product_image_tiny JS변수(tiny→big 치환) + JSON-LD image + 상세영역 ec-data-src 속성에서 최대 10장 수집. JSON-LD에서 가격·브랜드·재고·평점 확인."
+  },
+  "domain": "ordinairement.com",
+  "created_at": "2026-07-03T12:15:41",
+  "updated_at": "2026-07-03T12:38:32"
+}

@@ -52,10 +52,14 @@ export function mapToProductData(raw: Record<string, unknown>): ProductData {
   const priceO = raw.price_original as number | null | undefined;
   const priceD = raw.price_discounted as number | null | undefined;
 
-  type RawOpt = { name?: string; values?: string[] };
+  type RawOpt = { name?: string; values?: string[]; soldout_values?: string[] };
   const options = ((raw.options as RawOpt[]) ?? [])
     .filter(o => Array.isArray(o.values) && o.values.length > 0)
-    .map(o => ({ name: o.name ?? "옵션", values: o.values! }));
+    .map(o => {
+      const g: import("../modules/shopping/ai/claude").OptionGroup = { name: o.name ?? "옵션", values: o.values! };
+      if (Array.isArray(o.soldout_values) && o.soldout_values.length > 0) g.soldout_values = o.soldout_values;
+      return g;
+    });
 
   return {
     title:             (raw.title as string) ?? "",

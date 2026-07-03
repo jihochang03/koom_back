@@ -1,0 +1,9 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "makeshop 기반 쇼핑몰. requests.get으로 직접 수집 가능(한국어 인코딩 주의 apparent_encoding 사용). JSON-LD(Product)에 상품명/가격/재고. select.basic_option에 옵션. 배송비는 무료배송 텍스트 파싱. 이미지는 JSON-LD image 배열 + shopimages 패턴."
+  },
+  "domain": "nibbuns.co.kr",
+  "created_at": "2026-07-03T10:08:46",
+  "updated_at": "2026-07-03T10:08:46"
+}

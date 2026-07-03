@@ -1,11 +1,11 @@
 # Template: smartstore.naver.com (detail)
 # Generated: 2026-06-01T01:32:38.960Z
 # Notes: 스마트스토어 상품 상세 페이지 스크레이퍼.
-- 가격: del.v4swfx73Z2 (원가), span.weP_mymkqG (할인가)
-- 옵션: ul.vuCQVdmISZ li a[role=option] → data-shp-contents-type (옵션명), data-shp-contents-id (옵션값)
-- 이미지: og:image + li.wQbS3Q5MEC img → ?type=o1000 변환
-- 판매자: span.n_SxvDlJ7T 또는 span.Gse77WNa5Q
-- 재고: JSON "soldOut":true 패턴 검사
+# - 가격: del.v4swfx73Z2 (원가), span.weP_mymkqG (할인가)
+# - 옵션: ul.vuCQVdmISZ li a[role=option], data-shp-contents-type (옵션명), data-shp-contents-id (옵션값)
+# - 이미지: og:image + li.wQbS3Q5MEC img, ?type=o1000 변환
+# - 판매자: span.n_SxvDlJ7T 또는 span.Gse77WNa5Q
+# - 재고: JSON "soldOut":true 패턴 검사
 
 import requests
 from bs4 import BeautifulSoup
@@ -61,7 +61,8 @@ def scrape(url: str) -> dict:
 
     # ── 4. 옵션 ───────────────────────────────────────────────────────────
     options = []
-    option_groups = {}  # {옵션명: [값, ...]}
+    option_groups = {}   # {옵션명: [값, ...]}
+    soldout_groups = {}  # {옵션명: [품절값, ...]}
 
     # ul.vuCQVdmISZ > li > a[role=option]
     # data-shp-contents-type: 옵션명, data-shp-contents-id: 옵션값
@@ -71,19 +72,27 @@ def scrape(url: str) -> dict:
         if not opt_val_raw:
             opt_val_raw = opt_li.get_text(strip=True)
 
+        is_soldout = bool(re.search(r'\(품절\)', opt_val_raw))
         # 부가 설명 제거: (품절), (+N원)
         opt_val = re.sub(r'\s*\(품절\)\s*', '', opt_val_raw).strip()
         opt_val = re.sub(r'\s*\(\+[\d,]+원\)\s*', '', opt_val).strip()
-        opt_val = opt_val.strip()
 
-        if opt_type not in option_groups:
-            option_groups[opt_type] = []
-        if opt_val and opt_val not in option_groups[opt_type]:
+        if not opt_val:
+            continue
+        option_groups.setdefault(opt_type, [])
+        soldout_groups.setdefault(opt_type, [])
+        if opt_val not in option_groups[opt_type]:
             option_groups[opt_type].append(opt_val)
+        if is_soldout and opt_val not in soldout_groups[opt_type]:
+            soldout_groups[opt_type].append(opt_val)
 
     for opt_name, vals in option_groups.items():
         if vals:
-            options.append({"name": opt_name, "values": vals})
+            entry = {"name": opt_name, "values": vals}
+            soldout = soldout_groups.get(opt_name) or []
+            if soldout:
+                entry["soldout_values"] = soldout
+            options.append(entry)
 
     # ── 5. 이미지 ─────────────────────────────────────────────────────────
     images = []

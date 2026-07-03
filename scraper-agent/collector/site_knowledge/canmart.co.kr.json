@@ -1,0 +1,10 @@
+{
+  "collection": {
+    "access_method": "chrome",
+    "notes": "MakeShop 기반 쇼핑몰. simple 모드 차단됨. 가격: input#price(정가)/input#disprice(할인가). 옵션: select.basic_option (label 속성에 옵션명). 갤러리: .swiper-slide img (최대 5장). 배송비 HTML 미노출 가능(텍스트 파싱). 재고: 'sellmate-live-stock' 실시간 재고 위젯 존재.",
+    "wait_for_selector": ".multiImgList"
+  },
+  "domain": "canmart.co.kr",
+  "created_at": "2026-07-03T09:57:54",
+  "updated_at": "2026-07-03T09:57:54"
+}

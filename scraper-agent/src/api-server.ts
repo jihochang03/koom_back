@@ -7,6 +7,8 @@ import { startCollectorServer, stopCollectorServer } from "./core/local-collecto
 import analyzeSiteHandler from "./modules/shopping/apis/analyze-site";
 import { runTemplateBuilder } from "./agent/template-builder-agent";
 import { enqueuePrefetch } from "./products/prefetch-queue";
+import { productStore } from "./products/product-store";
+import { crawlList } from "./modules/shopping/apis/crawl-list";
 import type Anthropic from "@anthropic-ai/sdk";
 
 const DJANGO_BASE = process.env.DJANGO_BASE_URL ?? "http://localhost:8000";
@@ -437,6 +439,51 @@ app.delete("/api/knowledge/:domain", async (req: Request, res: Response) => {
   } catch {
     res.status(503).json({ error: "수집 서버에 연결할 수 없습니다." });
   }
+});
+
+// ── Local product store ───────────────────────────────────────────────────────
+
+app.get("/api/local-products", (req: Request, res: Response) => {
+  const { domain, q, limit, offset } = req.query as Record<string, string>;
+  const items = productStore.list({
+    domain: domain || undefined,
+    q: q || undefined,
+    limit: limit ? parseInt(limit, 10) : 100,
+    offset: offset ? parseInt(offset, 10) : 0,
+  });
+  res.json({
+    items,
+    total: productStore.count(domain || undefined),
+    domains: productStore.domains(),
+  });
+});
+
+app.delete("/api/local-products", (_req: Request, res: Response) => {
+  productStore.clear();
+  res.json({ success: true });
+});
+
+app.delete("/api/local-products/:id", (req: Request, res: Response) => {
+  const deleted = productStore.delete(String(req.params.id));
+  res.json({ success: deleted });
+});
+
+// POST /api/crawl-list — SSE stream: listing page → template build → bulk scrape
+app.post("/api/crawl-list", async (req: Request, res: Response) => {
+  const { url, category } = req.body as { url?: string; category?: string };
+  if (!url || !url.startsWith("http")) {
+    res.status(400).json({ error: "유효한 URL이 필요합니다" });
+    return;
+  }
+
+  const sse = sseWriter(res);
+  try {
+    await crawlList(url, category ?? "shopping", (event, data) => sse.send(event, data));
+  } catch (err) {
+    sse.send("error", { message: err instanceof Error ? err.message : String(err) });
+  }
+  sse.send("done", {});
+  sse.end();
 });
 
 // Serve built React app in production (only if dist exists)

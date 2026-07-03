@@ -1,0 +1,11 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "simple requests로 완전 수집 가능. eg:originalPrice/eg:salePrice 메타태그로 가격, eg:brandName 메타로 브랜드, JS var SoldOut 변수로 품절 판단, #sel02 select로 옵션. 이미지는 og:image + /Product/ 경로 img 태그. 배송비: 무료배송 span 확인 후 기본정책(60,000원 이상 무료, 미만 3,200원) 적용. http://cdn → https://cdn 정규화 필요.",
+    "network_patterns": [],
+    "extra_clicks": []
+  },
+  "domain": "mariomall.co.kr",
+  "created_at": "2026-07-03T14:35:32",
+  "updated_at": "2026-07-03T14:35:32"
+}

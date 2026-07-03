@@ -1,0 +1,423 @@
+[
+  {
+    "id": "61083ce0-7491-40c3-9d44-5cb27ed97ebe",
+    "url": "https://www.coupang.com/vp/products/9609289899?itemId=28688432748&vendorItemId=95629865641&sourceType=CATEGORY&categoryId=433873",
+    "domain": "coupang.com",
+    "crawled_at": "2026-07-03T06:34:30.590Z",
+    "list_url": "https://www.coupang.com/np/categories/433973?eventCategory=breadcrumb",
+    "data": {
+      "title": "삼양 짜르르(멀티) 봉지라면 140g",
+      "description": "쿠팡에서 삼양 짜르르(멀티) 봉지라면 140g 구매하고 더 많은 혜택을 받으세요! 지금 할인중인 다른 짜장면 제품도 바로 쿠팡에서 확인할 수 있습니다.",
+      "price": {
+        "original": 5300,
+        "discounted": 5300,
+        "currency": "KRW"
+      },
+      "options": [],
+      "images": [
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2026/06/18/11/9/e241d42d-f433-4745-8c8b-f85566682195.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2026/06/18/11/5/3263ba73-6914-41b4-bd9e-62d6cfb82245.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2026/06/18/11/3/22ee7897-7467-4777-99b6-09a086d266ba.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2026/06/18/11/3/42fe68bc-1e77-4303-a318-01a7ad313a9c.jpg",
+        "http://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/95eaf93f-ffd2-408b-afef-fb159d1dc97e219750270320503484.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/694460359180-cbb1c944-940d-43f6-9d3f-7156579290e6.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/1025_amir_coupang_oct_80k/b5f6/a1b3fec3bc152403480e7a25c0d46abc040edd1122ee3eebc89c876324a7.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/da99/fd3cb404853bb5b8e178609fef4b0d0fb4c83f9d1869d33fa7b06b3ba919.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/image_audit/stage/manual/7354bc88-851e-4159-b5f0-4d6f46f9aed7_fixing_v2_1782707600754.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/image_audit/stage/manual/c474f09bd01d0b8e5ca8c857874569a78d713d1db0fdf60a1dcfb56805e5_1773207449843.png"
+      ],
+      "brand": "삼양",
+      "availability": "in_stock",
+      "shipping_fee": 0,
+      "shipping_fee_text": "무료배송",
+      "delivery_date": null,
+      "rating": 0,
+      "review_count": 0,
+      "seller": "쿠팡",
+      "specifications": {
+        "개당 수량": "1개입",
+        "개당 중량": "140g",
+        "보관방법": "실온보관",
+        "섭취방법": "즉석반조리식품",
+        "수량": "4개",
+        "쿠팡상품번호": "9609289899 - 28688432748",
+        "제품명": "컨텐츠 참조",
+        "식품의 유형": "컨텐츠 참조",
+        "생산자 및 소재지": "컨텐츠 참조",
+        "제조연월일, 소비기한 또는 품질유지기한": "업데이트 예정",
+        "포장단위별 내용물의 용량(중량), 수량": "컨텐츠 참조",
+        "원재료명 및 함량": "컨텐츠 참조"
+      },
+      "size": {
+        "confidence": "MEDIUM",
+        "girth_sum_cm": null,
+        "height_cm": null,
+        "length_cm": null,
+        "longest_side_cm": null,
+        "note": "작성된 값 사용",
+        "source": "written",
+        "success": true,
+        "weight_g": 140,
+        "width_cm": null
+      }
+    }
+  },
+  {
+    "id": "82a3470e-2b1e-4641-ad36-4c692d338962",
+    "url": "https://www.coupang.com/vp/products/9393910705?itemId=28531735261&vendorItemId=95477394025&sourceType=CATEGORY&categoryId=433873",
+    "domain": "coupang.com",
+    "crawled_at": "2026-07-03T06:34:59.912Z",
+    "list_url": "https://www.coupang.com/np/categories/433973?eventCategory=breadcrumb",
+    "data": {
+      "title": "한성기업 우동사리, 200g, 10개",
+      "description": "현재 별점 4.4점, 리뷰 3486개를 가진 한성기업 우동사리, 200g, 10개! 지금 쿠팡에서 더 저렴하고 다양한 우동 제품들을 확인해보세요.",
+      "price": {
+        "original": 27000,
+        "discounted": 4700,
+        "currency": "KRW"
+      },
+      "options": [
+        {
+          "name": "옵션",
+          "values": [
+            "1개",
+            "6개",
+            "10개",
+            "15개"
+          ]
+        }
+      ],
+      "images": [
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/4c0de83f-6987-4a61-a331-f2e9aafef230717724673657860355.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2025/06/16/15/5/20e63852-4507-4b96-a6c9-4e02bc51c1fd.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/rs_quotation_api/k4bcvakn/b7c0d9e0e2074841b7f49c1eb57bcaa7.jpg"
+      ],
+      "brand": null,
+      "availability": "in_stock",
+      "shipping_fee": 0,
+      "shipping_fee_text": "무료배송",
+      "delivery_date": "내일(토) 7/4 도착 보장 (8시간 25분 내 주문 시 / 서울⋅경기 기준)",
+      "rating": 4.4,
+      "review_count": 3486,
+      "seller": "쿠팡",
+      "specifications": {
+        "라면 종류": "우동라면",
+        "면 종류": "숙면",
+        "소비기한(또는 유통기한)": "2026-08-19 이거나 그 이후인 상품",
+        "총 수량": "10개",
+        "쿠팡상품번호": "9393910705 - 28531735261",
+        "포장형태": "봉지",
+        "제품명": "컨텐츠 참조",
+        "식품의 유형": "컨텐츠 참조",
+        "생산자 및 소재지": "컨텐츠 참조",
+        "제조연월일, 소비기한 또는 품질유지기한": "소비기한(또는 유통기한) : 2026년 08월 19일 이거나 그 이후인 상품",
+        "포장단위별 내용물의 용량(중량), 수량": "200g x 10개",
+        "원재료명 및 함량": "컨텐츠 참조"
+      },
+      "size": {
+        "confidence": "MEDIUM",
+        "girth_sum_cm": null,
+        "height_cm": 16,
+        "length_cm": null,
+        "longest_side_cm": 16,
+        "note": "이미지 OCR 보강",
+        "source": "mixed",
+        "success": true,
+        "weight_g": 2000,
+        "width_cm": 13.5
+      }
+    }
+  },
+  {
+    "id": "b75ad3da-438a-482e-8dae-4ddba6d14699",
+    "url": "https://www.coupang.com/vp/products/5122093303?itemId=21486173866&vendorItemId=90822445489&sourceType=CATEGORY&categoryId=433873",
+    "domain": "coupang.com",
+    "crawled_at": "2026-07-03T06:35:31.449Z",
+    "list_url": "https://www.coupang.com/np/categories/433973?eventCategory=breadcrumb",
+    "data": {
+      "title": "오뚜기 라면사리 110g, 10개",
+      "description": "현재 별점 4.8점, 리뷰 31931개를 가진 오뚜기 라면사리 110g, 10개! 지금 쿠팡에서 더 저렴하고 다양한 봉지라면 제품들을 확인해보세요.",
+      "price": {
+        "original": 3760,
+        "discounted": 3760,
+        "currency": "KRW"
+      },
+      "options": [
+        {
+          "name": "옵션",
+          "values": [
+            "1개",
+            "10개",
+            "20개",
+            "160개"
+          ]
+        }
+      ],
+      "images": [
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/83273070932363-e7ae7847-d032-48bb-8d22-92af88a2895f.jpg",
+        "http://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/image_audit/advertiser/1757392549403/fe97ad5a-c22f-46f5-9a07-dd3bd36d8260.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2509595179007720-37cea7c2-b338-463b-97af-c56674b00638.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/54852f2a-ecdf-4ecf-b47a-f1ca403776c85794829587528375000.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2025/10/23/14/0/0b330ed5-e96f-4aaf-a24c-83352941fcda.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/31118212393037-fd63233b-6794-4ad1-a6a4-39358d7cb2db.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/70cc70f1-7294-4ad8-8f96-36ecd52d21383196084051548504114.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/854c/7d6a6d7bffcd5990e2aad4cfed1413a54c1d987400eb9ca8ad17c37fce65.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/532e/cf40f2baa1475bca8bab3ded368641219dc4c71fbe6bc64143e5e4c1e69f.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/rs_quotation_api/5epcpkos/8d3c5f62076a4c4a8bee420fa0806552.jpg"
+      ],
+      "brand": "오뚜기",
+      "availability": "in_stock",
+      "shipping_fee": 0,
+      "shipping_fee_text": "무료배송",
+      "delivery_date": "내일(토) 7/4 도착 보장 (8시간 24분 내 주문 시 / 서울⋅경기 기준)",
+      "rating": 4.8,
+      "review_count": 31931,
+      "seller": "쿠팡",
+      "specifications": {
+        "개당 수량": "5개입",
+        "라면 종류": "기타",
+        "면 종류": "기본면",
+        "소비기한(또는 유통기한)": "2026-08-08 이거나 그 이후인 상품",
+        "쿠팡상품번호": "5122093303 - 21486173866",
+        "포장형태": "봉지",
+        "제품명": "라면사리",
+        "식품의 유형": "유탕면",
+        "생산자 및 소재지": "컨텐츠 참조",
+        "제조연월일, 소비기한 또는 품질유지기한": "소비기한(또는 유통기한) : 2026년 08월 08일 이거나 그 이후인 상품",
+        "포장단위별 내용물의 용량(중량), 수량": "110g x 10개",
+        "원재료명 및 함량": "컨텐츠 참조"
+      },
+      "size": {
+        "confidence": "MEDIUM",
+        "girth_sum_cm": null,
+        "height_cm": null,
+        "length_cm": null,
+        "longest_side_cm": null,
+        "note": "작성된 값 사용",
+        "source": "written",
+        "success": true,
+        "weight_g": 550,
+        "width_cm": null
+      }
+    }
+  },
+  {
+    "id": "736822da-dc3d-48ea-8a5a-091036e78930",
+    "url": "https://www.coupang.com/vp/products/7251658316?itemId=18528121751&vendorItemId=85666600002&sourceType=CATEGORY&categoryId=433873",
+    "domain": "coupang.com",
+    "crawled_at": "2026-07-03T06:36:02.643Z",
+    "list_url": "https://www.coupang.com/np/categories/433973?eventCategory=breadcrumb",
+    "data": {
+      "title": "오뚜기 고시히카리 쌀죽, 285g, 3개",
+      "description": "현재 별점 4.7점, 리뷰 5435개를 가진 오뚜기 고시히카리 쌀죽, 285g, 3개! 지금 쿠팡에서 더 저렴하고 다양한 즉석죽 제품들을 확인해보세요.",
+      "price": {
+        "original": 11940,
+        "discounted": 5900,
+        "currency": "KRW"
+      },
+      "options": [
+        {
+          "name": "옵션",
+          "values": [
+            "1개",
+            "3개",
+            "6개",
+            "12개"
+          ]
+        }
+      ],
+      "images": [
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/54582466665029-4b8eff9a-96ac-4491-8e89-e0c334141c76.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/58883468219211-369fbfdf-a145-4298-93a9-1c3c564eea97.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/239105490123573-20626382-d984-4b70-a9b4-0f637df9d6eb.jpg",
+        "http://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/32d7/037d851389d3b5c362fb199e37163ac81a41cd963b2e037fe80bd42d8dc2.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/0393/d1fdf702e572870afe0424850ce00293dbea45e9b6d87fbade2c185a89f7.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/f770/49b41feb3bfd6440e5864f8759cd759e4f82dd457cac337c22244332fd91.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/9bdf/487169e155fbc69beabd2e2daadf65ff446db55bd2cd527460ca83f3bc2d.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/32d7/037d851389d3b5c362fb199e37163ac81a41cd963b2e037fe80bd42d8dc2.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/b237/8680e76aba14b9881cdcb97d660539fa06235c340dca31ac22f7644b81af.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/94ad/ef16baae7e6aa561e62f10896dfe34ddf3ca97b2e4cad9cd68e03aec4185.jpg"
+      ],
+      "brand": "오뚜기",
+      "availability": "in_stock",
+      "shipping_fee": 0,
+      "shipping_fee_text": "무료배송",
+      "delivery_date": "내일(토) 7/4 도착 보장 (8시간 24분 내 주문 시 / 서울⋅경기 기준)",
+      "rating": 4.7,
+      "review_count": 5435,
+      "seller": "쿠팡",
+      "specifications": {
+        "섭취방법": "즉석완조리식품",
+        "소비기한(또는 유통기한)": "2026-10-12 이거나 그 이후인 상품",
+        "용기타입": "용기/통",
+        "종류": "기타",
+        "총 수량": "3개",
+        "쿠팡상품번호": "7251658316 - 18528121751",
+        "제품명": "고시히카리쌀죽",
+        "식품의 유형": "컨텐츠 참조",
+        "생산자 및 소재지": "컨텐츠 참조",
+        "제조연월일, 소비기한 또는 품질유지기한": "소비기한(또는 유통기한) : 2026년 10월 12일 이거나 그 이후인 상품제조년월일 : 2025년 08월 19일 이후인 제조상품",
+        "포장단위별 내용물의 용량(중량), 수량": "컨텐츠 참조",
+        "원재료명 및 함량": "컨텐츠 참조"
+      },
+      "size": {
+        "confidence": "LOW",
+        "girth_sum_cm": null,
+        "height_cm": null,
+        "length_cm": null,
+        "longest_side_cm": null,
+        "note": "기본값 500g (키워드 미매칭) · 이미지 OCR 보강",
+        "source": "image_ocr",
+        "success": true,
+        "weight_g": 285,
+        "width_cm": null
+      }
+    }
+  },
+  {
+    "id": "e9a1f127-00a4-4fd4-a0d1-0ac2685ca2d5",
+    "url": "https://www.coupang.com/vp/products/9393910705?itemId=28531735123&vendorItemId=95477393892&sourceType=CATEGORY&categoryId=433873",
+    "domain": "coupang.com",
+    "crawled_at": "2026-07-03T06:36:38.273Z",
+    "list_url": "https://www.coupang.com/np/categories/433973?eventCategory=breadcrumb",
+    "data": {
+      "title": "한성기업 우동사리, 200g, 15개",
+      "description": "현재 별점 4.4점, 리뷰 3486개를 가진 한성기업 우동사리, 200g, 15개! 지금 쿠팡에서 더 저렴하고 다양한 우동 제품들을 확인해보세요.",
+      "price": {
+        "original": 40500,
+        "discounted": 6800,
+        "currency": "KRW"
+      },
+      "options": [
+        {
+          "name": "옵션",
+          "values": [
+            "1개",
+            "6개",
+            "10개",
+            "15개"
+          ]
+        }
+      ],
+      "images": [
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/244d4213-6a1d-4cf9-97b7-e704e1f48e2b12569722056586502371.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2025/06/16/15/5/20e63852-4507-4b96-a6c9-4e02bc51c1fd.jpg",
+        "http://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/a4a6/1185eeaf4df8f638334809391f1c45ec9109dc2401c2ca1f67e98691671b.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/70cc70f1-7294-4ad8-8f96-36ecd52d21383196084051548504114.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/1e0b/9bbed89a5f6fb667ba73b04d3b0648be8bd8d842f4df6818e1a0991cd5ca.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/54852f2a-ecdf-4ecf-b47a-f1ca403776c85794829587528375000.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/6972/860fe6eca88ace0a8d697ef891ce353353456b0dca6dd31b5bad438e4b58.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/bae3/2462f9fd033263078083d1e5368c60f717269605f59ee9ee0541d6ad0c51.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/4671/95467b372de6b703fe3ef64c8dab66a3acc998f866aa9a9de09e0168cf78.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/image_audit/stage/manual/ff45e2339256c68c86266d8a075c1d19bdfa8e123b02a5ed673940cdbf43_1753090262668.jpg"
+      ],
+      "brand": null,
+      "availability": "in_stock",
+      "shipping_fee": 0,
+      "shipping_fee_text": "무료배송",
+      "delivery_date": "내일(토) 7/4 도착 보장 (8시간 23분 내 주문 시 / 서울⋅경기 기준)",
+      "rating": 4.4,
+      "review_count": 3486,
+      "seller": "쿠팡",
+      "specifications": {
+        "라면 종류": "우동라면",
+        "면 종류": "숙면",
+        "소비기한(또는 유통기한)": "2026-08-19 이거나 그 이후인 상품",
+        "총 수량": "15개",
+        "쿠팡상품번호": "9393910705 - 28531735123",
+        "포장형태": "봉지",
+        "제품명": "컨텐츠 참조",
+        "식품의 유형": "컨텐츠 참조",
+        "생산자 및 소재지": "컨텐츠 참조",
+        "제조연월일, 소비기한 또는 품질유지기한": "소비기한(또는 유통기한) : 2026년 08월 19일 이거나 그 이후인 상품",
+        "포장단위별 내용물의 용량(중량), 수량": "200g x 15개",
+        "원재료명 및 함량": "컨텐츠 참조"
+      },
+      "size": {
+        "confidence": "MEDIUM",
+        "girth_sum_cm": null,
+        "height_cm": 16,
+        "length_cm": null,
+        "longest_side_cm": 16,
+        "note": "이미지 OCR 보강",
+        "source": "mixed",
+        "success": true,
+        "weight_g": 3000,
+        "width_cm": 13.5
+      }
+    }
+  },
+  {
+    "id": "47d1e6d5-93b4-467c-a4b4-462133006ec3",
+    "url": "https://www.coupang.com/vp/products/9393910705?itemId=27897875944&vendorItemId=94856748090&sourceType=CATEGORY&categoryId=433873",
+    "domain": "coupang.com",
+    "crawled_at": "2026-07-03T06:37:26.002Z",
+    "list_url": "https://www.coupang.com/np/categories/433973?eventCategory=breadcrumb",
+    "data": {
+      "title": "한성기업 우동사리, 200g, 6개",
+      "description": "현재 별점 4.4점, 리뷰 3486개를 가진 한성기업 우동사리, 200g, 6개! 지금 쿠팡에서 더 저렴하고 다양한 우동 제품들을 확인해보세요.",
+      "price": {
+        "original": 16200,
+        "discounted": 3900,
+        "currency": "KRW"
+      },
+      "options": [
+        {
+          "name": "옵션",
+          "values": [
+            "1개",
+            "6개",
+            "10개",
+            "15개"
+          ]
+        }
+      ],
+      "images": [
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/f5bdbfb6-ea5f-4af2-ad65-7dd62e2cd8ed8902265571440607387.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/2025/06/16/15/5/20e63852-4507-4b96-a6c9-4e02bc51c1fd.jpg",
+        "http://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/a4a6/1185eeaf4df8f638334809391f1c45ec9109dc2401c2ca1f67e98691671b.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/70cc70f1-7294-4ad8-8f96-36ecd52d21383196084051548504114.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/1e0b/9bbed89a5f6fb667ba73b04d3b0648be8bd8d842f4df6818e1a0991cd5ca.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/54852f2a-ecdf-4ecf-b47a-f1ca403776c85794829587528375000.png",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/6972/860fe6eca88ace0a8d697ef891ce353353456b0dca6dd31b5bad438e4b58.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/bae3/2462f9fd033263078083d1e5368c60f717269605f59ee9ee0541d6ad0c51.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/4671/95467b372de6b703fe3ef64c8dab66a3acc998f866aa9a9de09e0168cf78.jpg",
+        "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/image_audit/stage/manual/ff45e2339256c68c86266d8a075c1d19bdfa8e123b02a5ed673940cdbf43_1753090262668.jpg"
+      ],
+      "brand": null,
+      "availability": "in_stock",
+      "shipping_fee": 0,
+      "shipping_fee_text": "무료배송",
+      "delivery_date": null,
+      "rating": 4.4,
+      "review_count": 3486,
+      "seller": "쿠팡",
+      "specifications": {
+        "라면 종류": "우동라면",
+        "면 종류": "숙면",
+        "소비기한(또는 유통기한)": "2026-08-19 이거나 그 이후인 상품",
+        "총 수량": "6개",
+        "쿠팡상품번호": "9393910705 - 27897875944",
+        "포장형태": "봉지",
+        "제품명": "컨텐츠 참조",
+        "식품의 유형": "컨텐츠 참조",
+        "생산자 및 소재지": "컨텐츠 참조",
+        "제조연월일, 소비기한 또는 품질유지기한": "소비기한(또는 유통기한) : 2026년 08월 19일 이거나 그 이후인 상품",
+        "포장단위별 내용물의 용량(중량), 수량": "200g x 6개",
+        "원재료명 및 함량": "컨텐츠 참조"
+      },
+      "size": {
+        "confidence": "MEDIUM",
+        "girth_sum_cm": null,
+        "height_cm": 16,
+        "length_cm": null,
+        "longest_side_cm": 16,
+        "note": "이미지 OCR 보강",
+        "source": "mixed",
+        "success": true,
+        "weight_g": 1200,
+        "width_cm": 13.5
+      }
+    }
+  }
+]

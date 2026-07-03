@@ -3,8 +3,10 @@ import './App.css'
 import AgentPage from './AgentPage'
 import KnowledgePage from './KnowledgePage'
 import ScrapePage from './ScrapePage'
+import ListCrawlPage from './ListCrawlPage'
+import SavedProductsPage from './SavedProductsPage'
 
-type Tab = 'agent' | 'knowledge' | 'scrape'
+type Tab = 'agent' | 'knowledge' | 'scrape' | 'list' | 'saved'
 
 function getStoredTheme(): 'light' | 'dark' | null {
   return (localStorage.getItem('theme') as 'light' | 'dark') ?? null
@@ -65,6 +67,18 @@ export default function App() {
           >
             Scrape
           </button>
+          <button
+            className={`header-btn${tab === 'list' ? ' active' : ''}`}
+            onClick={() => setTab('list')}
+          >
+            목록 수집
+          </button>
+          <button
+            className={`header-btn${tab === 'saved' ? ' active' : ''}`}
+            onClick={() => setTab('saved')}
+          >
+            저장된 상품
+          </button>
           <button className="theme-btn" onClick={toggleTheme} title="테마 전환">
             {themeIcon}
           </button>
@@ -74,6 +88,8 @@ export default function App() {
       {tab === 'agent' && <AgentPage />}
       {tab === 'knowledge' && <KnowledgePage />}
       {tab === 'scrape' && <ScrapePage />}
+      {tab === 'list' && <ListCrawlPage />}
+      {tab === 'saved' && <SavedProductsPage />}
     </div>
   )
 }

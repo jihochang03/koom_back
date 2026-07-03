@@ -195,6 +195,7 @@ export async function extractProductDetail({
 export interface OptionGroup {
   name: string;
   values: string[];
+  soldout_values?: string[];
 }
 
 export interface ApiStrategy {
@@ -418,7 +419,7 @@ HTML 내용을 보고 발견한 상품 정보를 자연스러운 한국어 대�
 {
   "title": "상품명",
   "price": { "original": 숫자, "discounted": 숫자또는null, "currency": "KRW" },
-  "options": [{ "name": "옵션명", "values": ["값1", "값2"] }],
+  "options": [{ "name": "옵션명", "values": ["값1", "값2"], "soldout_values": ["품절값1"] }],
   "images": ["url"],
   "brand": null,
   "availability": "in_stock",

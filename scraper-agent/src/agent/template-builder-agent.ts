@@ -572,12 +572,15 @@ function toolSaveTemplate(
   const filename = `${domain.replace(/[^a-zA-Z0-9._-]/g, "_")}_${page_type}.py`;
   const outPath = path.join(TEMPLATES_DIR, filename);
 
+  const notesLines = notes
+    ? notes.split("\n").map((l, i) => (i === 0 ? `# Notes: ${l}` : `# ${l}`)).join("\n")
+    : "";
   const header = [
     `# Template: ${domain} (${page_type})`,
     `# Generated: ${new Date().toISOString()}`,
-    notes ? `# Notes: ${notes}` : "",
+    notesLines,
     "",
-  ].filter(l => l !== undefined).join("\n");
+  ].filter(Boolean).join("\n") + "\n";
 
   const finalCode = addMainBlockIfMissing(code);
   fs.writeFileSync(outPath, header + finalCode, "utf-8");

@@ -92,59 +92,142 @@ function CodeBlock({ code }: { code: string }) {
 // ── Extraction card ───────────────────────────────────────────────────────────
 
 function ExtractionCard({ data }: { data: Record<string, unknown> }) {
-  const opts    = data.options as Array<{ name: string; values: string[] }> | undefined
+  const [imgIdx, setImgIdx] = useState(0)
+
+  type RawOpt = { name: string; values: string[]; soldout_values?: string[] }
+  const opts    = data.options as RawOpt[] | undefined
   const price_d = data.price_discounted as number | null | undefined
   const price_o = data.price_original  as number | null | undefined
-  const imgs    = data.images as string[] | undefined
-  const img     = imgs?.[0]
+  const imgs    = (data.images as string[] | undefined ?? []).filter(Boolean)
+  const img     = imgs[Math.min(imgIdx, imgs.length - 1)]
+  const hasDisc = price_o != null && price_d != null && price_o > price_d
+  const rate    = hasDisc ? Math.round((1 - price_d! / price_o!) * 100) : null
+  const isOut   = data.availability === 'out_of_stock'
+  const specs   = Object.entries((data.specifications as Record<string, string>) ?? {}).filter(([, v]) => v).slice(0, 8)
 
   return (
     <div className="extraction-card">
       <div className="ex-header">
         <span>📦</span>
         추출 결과
-      </div>
-      <div className="ex-body">
-        {img && (
-          <img
-            className="ex-img"
-            src={img}
-            alt=""
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
+        {!!data.availability && (
+          <span className={`ex-avail-badge${isOut ? ' out' : ''}`}>
+            {isOut ? '품절' : '판매중'}
+          </span>
         )}
+      </div>
+
+      <div className="ex-top">
+        {imgs.length > 0 && (
+          <div className="ex-gallery">
+            <img
+              className="ex-img"
+              src={img}
+              alt=""
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            {imgs.length > 1 && (
+              <div className="ex-thumbs">
+                {imgs.slice(0, 5).map((src, i) => (
+                  <button
+                    key={i}
+                    className={`ex-thumb${i === imgIdx ? ' active' : ''}`}
+                    onClick={() => setImgIdx(i)}
+                  >
+                    <img src={src} alt="" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  </button>
+                ))}
+                {imgs.length > 5 && <span className="ex-thumb-more">+{imgs.length - 5}</span>}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="ex-info">
           {!!data.title && <div className="ex-title">{String(data.title)}</div>}
+
           {(price_d != null || price_o != null) && (
             <div className="ex-price">
-              {price_d != null && (
-                <span className="price-d">₩{Number(price_d).toLocaleString()}</span>
-              )}
-              {price_o != null && price_o !== price_d && (
-                <span className="price-o">₩{Number(price_o).toLocaleString()}</span>
-              )}
+              {price_d != null && <span className="price-d">₩{Number(price_d).toLocaleString()}</span>}
+              {hasDisc && price_o != null && <span className="price-o">₩{Number(price_o).toLocaleString()}</span>}
+              {rate != null && <span className="ex-rate">-{rate}%</span>}
             </div>
           )}
-          {!!data.availability && (
-            <div className="ex-avail">{String(data.availability)}</div>
+
+          <div className="ex-meta">
+            {!!data.seller && (
+              <div className="ex-meta-row">
+                <span className="meta-lbl">판매자</span>
+                <span>{String(data.seller)}</span>
+              </div>
+            )}
+            {!!data.brand && (
+              <div className="ex-meta-row">
+                <span className="meta-lbl">브랜드</span>
+                <span>{String(data.brand)}</span>
+              </div>
+            )}
+            {data.rating != null && (
+              <div className="ex-meta-row">
+                <span className="meta-lbl">평점</span>
+                <span>
+                  ⭐ {String(data.rating)}
+                  {data.review_count != null && ` (${Number(data.review_count).toLocaleString()})`}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {(data.shipping_fee_text != null || data.delivery_date != null) && (
+            <div className="ex-shipping">
+              <span className="ship-icon">🚚</span>
+              {data.shipping_fee_text != null && (
+                <span className={data.shipping_fee === 0 ? 'free-ship' : 'ship-fee'}>
+                  {String(data.shipping_fee_text)}
+                </span>
+              )}
+              {data.delivery_date != null && (
+                <>
+                  {data.shipping_fee_text != null && <span className="ship-sep">·</span>}
+                  <span className="ship-date">{String(data.delivery_date)}</span>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
+
       {opts && opts.length > 0 && (
         <div className="ex-options">
-          {opts.map((g, i) => (
-            <div key={i} className="ex-opt-group">
-              <span className="ex-opt-name">{g.name}</span>
-              <div className="ex-opt-tags">
-                {(g.values ?? []).slice(0, 10).map((v, j) => (
-                  <span key={j} className="ex-tag">{v}</span>
-                ))}
-                {(g.values?.length ?? 0) > 10 && (
-                  <span className="ex-tag more">+{(g.values?.length ?? 0) - 10}</span>
-                )}
+          {opts.map((g, i) => {
+            const soSet = new Set(g.soldout_values ?? [])
+            return (
+              <div key={i} className="ex-opt-group">
+                <span className="ex-opt-name">{g.name}</span>
+                <div className="ex-opt-tags">
+                  {(g.values ?? []).map((v, j) => (
+                    <span key={j} className={`ex-tag${soSet.has(v) ? ' soldout' : ''}`}>{v}</span>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
+        </div>
+      )}
+
+      {specs.length > 0 && (
+        <div className="ex-specs">
+          <div className="ex-opt-name" style={{ marginBottom: 6 }}>스펙</div>
+          <table className="spec-table">
+            <tbody>
+              {specs.map(([k, v]) => (
+                <tr key={k}>
+                  <td className="spec-key">{k}</td>
+                  <td className="spec-val">{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

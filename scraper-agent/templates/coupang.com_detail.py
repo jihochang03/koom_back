@@ -112,12 +112,16 @@ def scrape(url: str) -> dict:
     price_discounted = _num(info.get("discounted_price"))
 
     # 옵션: product_info의 [{option_type, available_values, soldout_values}]
-    #       → 공통 스키마 [{name, values}]로 변환
+    #       → 공통 스키마 [{name, values, soldout_values}]로 변환
     options = []
     for opt in (info.get("product_options") or []):
         values = opt.get("available_values") or []
         if values:
-            options.append({"name": opt.get("option_type") or "옵션", "values": values})
+            entry = {"name": opt.get("option_type") or "옵션", "values": values}
+            soldout = opt.get("soldout_values") or []
+            if soldout:
+                entry["soldout_values"] = soldout
+            options.append(entry)
 
     # 재고
     availability = "out_of_stock" if info.get("sold_out") else "in_stock"
