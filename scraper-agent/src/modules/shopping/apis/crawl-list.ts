@@ -28,19 +28,36 @@ async function collectPage(url: string): Promise<{ html: string } | null> {
 
 async function extractProductUrls(html: string, baseUrl: string): Promise<string[]> {
   const base = new URL(baseUrl);
-
-  // Extract all same-domain hrefs
   const seen = new Set<string>();
-  const hrefRe = /href\s*=\s*["']([^"'\s]+)["']/g;
-  let m: RegExpExecArray | null;
-  while ((m = hrefRe.exec(html)) !== null) {
+
+  function addUrl(raw: string) {
     try {
-      const abs = new URL(m[1], base.origin).href;
+      const abs = new URL(raw, base.origin).href;
       if (new URL(abs).hostname === base.hostname) seen.add(abs);
-    } catch { /* skip invalid urls */ }
+    } catch { /* skip */ }
   }
 
-  const urlList = [...seen].slice(0, 400).join("\n");
+  // 1) href 속성
+  const hrefRe = /href\s*=\s*["']([^"'\s]+)["']/g;
+  let m: RegExpExecArray | null;
+  while ((m = hrefRe.exec(html)) !== null) addUrl(m[1]);
+
+  // 2) data-href / data-url / data-path / data-link 속성
+  const dataRe = /data-(?:href|url|path|link)\s*=\s*["']([^"'\s]+)["']/g;
+  while ((m = dataRe.exec(html)) !== null) addUrl(m[1]);
+
+  // 3) gate/redirect URL의 target 파라미터 (예: /gate?target=/store/xxx/1234)
+  const targetRe = /[?&]target=([^&"'\s>]+)/g;
+  while ((m = targetRe.exec(html)) !== null) {
+    try { addUrl(decodeURIComponent(m[1])); } catch { addUrl(m[1]); }
+  }
+
+  // 4) 스크립트 태그 안 경로 패턴 (/goods/숫자, /item/숫자, /store/.../숫자 등)
+  const scriptBlocks = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(s => s[1]).join(" ");
+  const pathRe = /["'`](\/(?:goods|item|product|detail|vp\/products|store\/[^/]+)\/\d[^"'`\s?#]{0,80})["'`]/g;
+  while ((m = pathRe.exec(scriptBlocks)) !== null) addUrl(m[1]);
+
+  const urlList = [...seen].slice(0, 500).join("\n");
   if (!urlList) return [];
 
   const resp = await claude().messages.create({
@@ -49,8 +66,13 @@ async function extractProductUrls(html: string, baseUrl: string): Promise<string
     messages: [{
       role: "user",
       content: `다음 URL 목록에서 상품 상세 페이지 URL만 골라 JSON 배열로 반환하세요.
-상품 상세 페이지: 단일 상품을 보여주는 페이지 (/products/123, /item/456, /goods/789, /vp/products/xxx 등)
-제외할 것: 카테고리 목록, 검색 결과, 마이페이지, 장바구니, 로그인, 리뷰, 공지사항, 브랜드관 등
+
+상품 상세 페이지 판단 기준:
+- 단일 상품을 보여주는 URL: /goods/숫자, /item/숫자, /products/숫자, /vp/products/xxx, /store/브랜드/숫자 등
+- 게이트/리다이렉트 URL도 포함: 경로 끝이 상품 ID(숫자)로 끝나면 상품 URL로 간주
+- 파라미터에 상품 ID가 있는 경우 (예: ?goodsNo=123, ?itemId=456)도 포함
+
+제외: 카테고리 목록, 검색, 마이페이지, 장바구니, 로그인, 리뷰, 공지, 이미지/CSS/JS 파일
 
 사이트: ${base.hostname}
 URL 목록:
