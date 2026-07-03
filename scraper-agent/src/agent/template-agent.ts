@@ -81,7 +81,21 @@ Rules:
 - If no next-page button exists, set pagination.selector to null
 - If network API data is provided and it contains product arrays, set extraction_strategy to "api" and api_endpoint to the URL
 - currency: use "KRW" for Korean sites, "JPY" for Japanese, etc.
-- For missing fields, omit them from fields rather than using null selectors`;
+- For missing fields, omit them from fields rather than using null selectors
+
+PRICE EXTRACTION — this is the most critical field. Study the screenshot carefully for any price display.
+Common Korean shopping mall price patterns (look for ALL of these):
+- .price01 / .price02 — discounted is usually price01 (smaller number), original is price02 (larger)
+- .sale-price / .origin-price / .original-price / .regular-price
+- .selling-price / .consumer-price / .market-price
+- .dc-price / .normal-price / .real-price / .final-price
+- [class*="price"][class*="sale"] / [class*="price"][class*="origin"]
+- del or s tags — almost always the original (crossed-out) price
+- .salePercent / .discount-rate / [class*="discount"] — nearby these is always a price pair
+- data-sale-price / data-price / data-original-price attributes
+- If you see TWO prices near a discount badge (% 할인, % OFF), the LOWER number is discounted, HIGHER is original
+- If only ONE price visible, put it in price_discounted and omit price_original`;
+
 
 // ─── Main function ────────────────────────────────────────────────────────────
 

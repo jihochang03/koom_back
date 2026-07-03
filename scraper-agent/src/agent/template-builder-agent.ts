@@ -651,6 +651,19 @@ save_site_knowledge(domain, { access_method: "simple" | "chrome" | "naver", ... 
 
 ## 추출 목표 — "보이는 건 다 뽑는다" (단, 4번 저장 이후 보강 단계에서)
 [A] 항상 필수 (없으면 실패): title / (price_original 또는 price_discounted) / shipping_fee_text
+
+## 가격 추출 — 가장 중요. HTML에서 반드시 찾아낼 것
+두 가격(할인가 + 정가)이 있으면 둘 다 추출. 하나뿐이면 price_discounted에 저장.
+한국 쇼핑몰 공통 패턴 (이 중 하나는 반드시 해당됨):
+- .price01 / .price02 — 보통 price01=할인가(낮은 숫자), price02=정가(높은 숫자)
+- .sale-price / .original-price / .regular-price / .normal-price
+- .selling-price / .consumer-price / .market-price / .real-price / .final-price
+- .dc-price / .discount-price / [class*="sale"] + [class*="price"]
+- del 또는 s 태그 — 거의 항상 정가(취소선 가격)
+- .salePercent / [class*="discount"] / "% 할인" 텍스트 근처에 항상 가격 쌍이 있음
+- data-sale-price / data-price / data-original-price 속성
+- JSON-LD ("offers": {"price": ...}) — script[type="application/ld+json"] 에서 추출
+- 두 숫자 중 큰 것 = 정가, 작은 것 = 할인가. 확신 없으면 grep_html로 price 클래스 주변 HTML 확인.
 [B] 페이지에 보이면 채운다 (저장 후 보강, 예산 내에서):
 - options: 옵션 선택 UI(드롭다운·색상·사이즈·수량)가 있으면 **모든 그룹·값**. JSON-LD로 가격을 얻더라도 **옵션은 HTML/네트워크에서 별도 추출**(JSON-LD엔 옵션이 없는 경우가 많음).
 - images: **og:image 1장에서 끝내지 말 것** — 썸네일·갤러리·상세 이미지까지 최대 10장. 중복 제거, 썸네일은 고해상도로 보정, // → https: 보정.
