@@ -1,0 +1,9 @@
+{
+  "collection": {
+    "access_method": "simple",
+    "notes": "EUC-KR 인코딩 필수(resp.encoding='euc-kr'). JSON-LD에서 이미지·description 파싱. 이미지 URL에 이중슬래시 패턴(joamom.co.kr//joamom.jpg2.kr//) 있음. 무료배송 사이트. optionJsonData JS 변수에서 옵션 추출."
+  },
+  "domain": "joamom.co.kr",
+  "created_at": "2026-07-04T00:37:07",
+  "updated_at": "2026-07-04T00:50:54"
+}

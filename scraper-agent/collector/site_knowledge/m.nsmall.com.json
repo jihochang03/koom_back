@@ -1,0 +1,13 @@
+{
+  "collection": {
+    "access_method": "chrome",
+    "network_patterns": [
+      "https://mapi.nsmall.com/md/api/v1/product/info/{goods_cd}?deviceChnId=INT",
+      "https://mapi.nsmall.com/md/api/v1/product/buy-layer/{goods_cd}"
+    ],
+    "notes": "simple 모드는 차단됨(사이트 기본 페이지만 반환). chrome 필요. 상품정보는 mapi.nsmall.com API 네트워크 로그에서 추출. product/info: 상품명/가격/이미지/평점/배송. buy-layer: 옵션(unitList)/재고. 상품 코드는 URL /goods/{id}에서 추출."
+  },
+  "domain": "m.nsmall.com",
+  "created_at": "2026-07-04T01:19:20",
+  "updated_at": "2026-07-04T01:19:20"
+}
